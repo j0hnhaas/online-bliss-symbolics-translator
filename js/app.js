@@ -19,6 +19,8 @@ const I18N = {
     placeholder: "Schreibe hier einen Text …",
     langAuto: "Auto",
     langLabel: "Sprache",
+    textLang: "Textsprache",
+    uiLang: "Oberfläche",
     options: "Optionen & Beispiele",
     btnClear: "Text löschen",
     about: "Info & Lizenz",
@@ -62,6 +64,8 @@ const I18N = {
     placeholder: "Type some text here …",
     langAuto: "Auto",
     langLabel: "Language",
+    textLang: "Text language",
+    uiLang: "Interface",
     options: "Options & examples",
     btnClear: "Clear text",
     about: "About & licence",
@@ -192,15 +196,28 @@ function buildLangSeg() {
     b.setAttribute("aria-checked", "false");
     if (code === "auto") b.className = "auto";
     else b.lang = code;
-    b.addEventListener("click", () => setLang(code));
+    b.addEventListener("click", () => (setLang(code), closeLangMenu()));
     seg.appendChild(b);
   }
   applyLangLabels();
 }
 
+function closeLangMenu() {
+  $("#lang-menu").hidden = true;
+  $("#lang-btn").setAttribute("aria-expanded", "false");
+}
+function toggleLangMenu() {
+  const open = $("#lang-menu").hidden;
+  $("#lang-menu").hidden = !open;
+  $("#lang-btn").setAttribute("aria-expanded", String(open));
+  if (open) document.querySelector('#lang-seg [aria-checked="true"]')?.focus({ preventScroll: true });
+}
+
 function applyLangLabels() {
   const auto = document.querySelector('#lang-seg [data-lang="auto"]');
   if (auto) auto.textContent = I18N[state.ui].langAuto;
+  $("#lang-code").textContent = state.lang === "auto" ? I18N[state.ui].langAuto : state.lang.toUpperCase();
+  $("#lang-btn").setAttribute("aria-label", `${I18N[state.ui].textLang}: ${state.lang === "auto" ? I18N[state.ui].langAuto : NATIVE[state.lang]}`);
   for (const b of document.querySelectorAll("#lang-seg button:not(.auto)")) b.textContent = NATIVE[b.dataset.lang];
 }
 
@@ -617,7 +634,7 @@ async function initPwa() {
 function setLang(l) {
   state.lang = l;
   for (const b of document.querySelectorAll("#lang-seg button")) b.setAttribute("aria-checked", String(b.dataset.lang === l));
-  document.querySelector(`#lang-seg [data-lang="${l}"]`)?.scrollIntoView({ inline: "center", block: "nearest" });
+  $("#lang-code").textContent = l === "auto" ? I18N[state.ui].langAuto : l.toUpperCase();
   applyChips();
   state.choices = {};
   update();
@@ -640,6 +657,13 @@ async function init() {
   $("#size").value = SIZES.indexOf(state.size);
   setLang(state.lang);
 
+  $("#lang-btn").addEventListener("click", toggleLangMenu);
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".langmenu")) closeLangMenu();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#lang-menu").hidden) (closeLangMenu(), $("#lang-btn").focus());
+  });
   for (const b of document.querySelectorAll(".ui-lang button"))
     b.addEventListener("click", () => {
       state.ui = b.dataset.ui;

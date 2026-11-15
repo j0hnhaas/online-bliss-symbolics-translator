@@ -23,9 +23,21 @@
         <h1 data-i18n="title">Bliss-Übersetzer</h1>
         <p class="tagline" data-i18n="tagline">Zu Ehren des Werks von Charles K. Bliss</p>
       </div>
-      <div class="ui-lang" role="group" aria-label="Interface language">
-        <button type="button" data-ui="de">DE</button>
-        <button type="button" data-ui="en">EN</button>
+      <div class="langmenu">
+        <button type="button" id="lang-btn" aria-haspopup="true" aria-expanded="false" aria-controls="lang-menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z"/></svg>
+          <span id="lang-code">DE</span>
+          <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+        <div id="lang-menu" class="menu" hidden>
+          <div class="menu-h" data-i18n="textLang">Textsprache</div>
+          <div class="langs" role="radiogroup" id="lang-seg" aria-labelledby="lang-btn"></div>
+          <div class="menu-h" data-i18n="uiLang">Oberfläche</div>
+          <div class="ui-lang" role="group">
+            <button type="button" data-ui="de">Deutsch</button>
+            <button type="button" data-ui="en">English</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -42,9 +54,6 @@
         </button>
       </div>
       <textarea id="text" rows="1" spellcheck="false" autocomplete="off" data-i18n-ph="placeholder" placeholder="Schreibe hier einen Text …"></textarea>
-
-      <div class="label small" data-i18n="langLabel">Sprache</div>
-      <div class="langs" role="radiogroup" aria-label="Sprache des Textes" id="lang-seg"></div>
 
       <details class="opts" id="opts" open>
         <summary data-i18n="options">Optionen &amp; Beispiele</summary>
