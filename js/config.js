@@ -7,6 +7,6 @@
 //
 // Only page views and a few button events are counted; the text you type into the
 // translator never leaves your browser.
-export const GOATCOUNTER = "";
+export const GOATCOUNTER = "j0hnhaas";
 
 export const REPO_URL = "https://github.com/j0hnhaas/online-bliss-symbolics-translator";
