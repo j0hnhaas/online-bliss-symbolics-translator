@@ -1,0 +1,16 @@
+{
+  "_comment": "Hand-picked default symbols for very common ambiguous words (BCI-AV ids). The first id wins; context (part of speech) can still re-rank.",
+  "de": {
+    "sein": "12639", "gehen": "18031", "laufen": "16699", "machen": "15410", "nehmen": "17497",
+    "können": "13114", "wissen": "15161", "brauchen": "15702", "fahren": "13883",
+    "in": "14932", "zu": "17739", "kein": "15733", "keine": "15733", "keinen": "15733",
+    "sehr": "15671", "dass": "24309", "warum": "18249", "noch": "24285",
+    "frau": "18269", "freund": "14401", "familie": "20572", "mann": "15416",
+    "nach hause": "14885", "zu hause": "14885", "zuhause": "14885"
+  },
+  "en": {
+    "woman": "18269", "family": "20572", "bread": "12895", "water": "18209", "no": "15722",
+    "fast": "16446", "sleep": "17009", "help": "14705", "play": "16200", "work": "18274",
+    "love": "15400", "answer": "12394", "need": "15702", "must": "15685", "old": "15916"
+  }
+}

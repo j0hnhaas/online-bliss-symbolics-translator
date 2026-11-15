@@ -1,0 +1,129 @@
+:root {
+  --paper: #f6f3ec;
+  --card: #fffdf8;
+  --ink: #1d1a16;
+  --muted: #6d675c;
+  --line: #ddd6c8;
+  --accent: #c4372b;
+  --accent-ink: #fff;
+  --focus: #1b5fd1;
+  --radius: 14px;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.5 var(--sans);
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.top, main, footer { max-width: 1040px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-top: 28px; padding-bottom: 8px; }
+h1 { font: 700 clamp(28px, 5vw, 40px)/1.1 var(--serif); margin: 0; letter-spacing: -0.01em; }
+h1::before {
+  content: "";
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.3em;
+  vertical-align: -0.04em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M10 54 32 12l22 42z' fill='none' stroke='%231d1a16' stroke-width='7' stroke-linejoin='round'/%3E%3Cpath d='M32 26v12' stroke='%23c4372b' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.tagline { margin: 6px 0 0; color: var(--muted); }
+
+.brand { min-width: 0; }
+.ui-lang { flex-shrink: 0; display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--card); }
+.ui-lang button { border: 0; background: none; padding: 6px 12px; font: 600 13px var(--sans); color: var(--muted); cursor: pointer; }
+.ui-lang button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+
+main { display: grid; gap: 18px; padding-top: 14px; padding-bottom: 8px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 18px 16px; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03); }
+.label { display: block; font: 600 13px/1 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.label.small { display: inline; margin: 0 8px 0 0; }
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 96px;
+  padding: 12px 14px;
+  font: 18px/1.45 var(--sans);
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+textarea:focus-visible, button:focus-visible, input:focus-visible, .hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: #fff; }
+.seg button { border: 0; background: none; padding: 7px 14px; font: 500 14px var(--sans); cursor: pointer; color: var(--ink); }
+.seg button[aria-checked="true"] { background: var(--ink); color: #fff; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.size { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-left: auto; }
+.size input { width: 120px; accent-color: var(--ink); }
+
+.examples { margin-top: 12px; font-size: 14px; }
+.chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 11px; margin: 0 6px 6px 0; font: 14px var(--sans); cursor: pointer; color: var(--ink); }
+.chip:hover { border-color: var(--ink); }
+
+.out-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.out-head .label { margin: 0; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font: 600 13px var(--sans); cursor: pointer; color: var(--ink); }
+.actions button:hover { border-color: var(--ink); }
+.actions button:disabled { opacity: 0.45; cursor: default; }
+
+.canvas { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-height: 120px; overflow-x: auto; }
+.canvas svg { display: block; max-width: none; }
+.canvas .hit { cursor: pointer; }
+.canvas .hit:hover { fill: rgba(196, 55, 43, 0.08); }
+.canvas .hit.unk:hover { fill: rgba(0, 0, 0, 0.05); }
+.muted { color: var(--muted); }
+.status { margin: 10px 2px 0; font-size: 14px; color: var(--muted); }
+.status b { color: var(--ink); font-weight: 600; }
+.hint { margin: 4px 2px 0; font-size: 13px; color: var(--muted); }
+
+.pop {
+  position: absolute;
+  z-index: 20;
+  width: min(360px, calc(100vw - 24px));
+  max-height: 70vh;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--ink);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+.pop h3 { margin: 0 0 8px; font: 600 15px var(--sans); }
+.pop p { margin: 0; font-size: 14px; color: var(--muted); }
+.alts { display: grid; gap: 6px; }
+.alt { display: grid; grid-template-columns: 72px 1fr; gap: 10px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: #fff; cursor: pointer; font: 14px/1.3 var(--sans); color: var(--ink); }
+.alt:hover { border-color: var(--ink); }
+.alt[aria-current="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.alt img { height: 56px; max-width: 72px; object-fit: contain; }
+.alt small { display: block; color: var(--muted); }
+
+footer { padding-top: 20px; padding-bottom: 40px; font-size: 13px; color: var(--muted); }
+footer p { margin: 0 0 6px; }
+footer a { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .size { margin-left: 0; }
+  .panel { padding: 14px; }
+}
+
+@media print {
+  body { background: #fff; }
+  .top, .panel:not(.output) > *, .out-head, .status, .hint, footer, .pop { display: none !important; }
+  .panel, .canvas { border: 0; box-shadow: none; padding: 0; }
+  .panel:not(.output) { display: none; }
+  .canvas { overflow: visible; }
+  .canvas svg { width: 100% !important; height: auto !important; }
+  .canvas .hit { display: none; }
+}

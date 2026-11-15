@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+*.log
+# raw BCI-AV downloads used by tools/build.py (get them from blissymbolics.org)
+/source/

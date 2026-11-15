@@ -1,0 +1,11 @@
+{
+  "name": "online-bliss-symbolics-translator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Translate German or English text into Blissymbolics, in the browser.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
