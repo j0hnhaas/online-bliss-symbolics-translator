@@ -1,15 +1,26 @@
-import { Translator, labelFor } from "./translate.js";
+import { Translator } from "./translate.js";
+import { CODES } from "./langs/index.js";
 import { layout, toSvg } from "./layout.js";
 import { GOATCOUNTER, REPO_URL } from "./config.js";
+
+const LANG_NAMES = {
+  de: { de: "Deutsch", en: "Englisch", fr: "Französisch", es: "Spanisch", it: "Italienisch", pt: "Portugiesisch", eo: "Esperanto" },
+  en: { de: "German", en: "English", fr: "French", es: "Spanish", it: "Italian", pt: "Portuguese", eo: "Esperanto" },
+};
+// the extra languages in the drop-down, with their own names
+const MORE_LANGS = ["fr", "es", "it", "pt", "eo"];
+const NATIVE = { fr: "Français", es: "Español", it: "Italiano", pt: "Português", eo: "Esperanto" };
 
 const I18N = {
   de: {
     title: "Bliss-Übersetzer",
-    tagline: "Deutschen oder englischen Text in Blissymbole umwandeln",
+    tagline: "Text in Blissymbole umwandeln: Deutsch, Englisch, Französisch, Spanisch, Italienisch, Portugiesisch und Esperanto",
     inputHeading: "Eingabe",
     inputLabel: "Dein Text",
-    placeholder: "Schreibe hier einen deutschen oder englischen Text …",
+    placeholder: "Schreibe hier einen Text …",
     langAuto: "Auto",
+    moreLangs: "Weitere Sprachen",
+    moreLangsOption: "Weitere …",
     optCaptions: "Wörter darunter",
     optArticles: "Artikel weglassen",
     optGrammar: "Zeit & Plural",
@@ -22,16 +33,16 @@ const I18N = {
     btnLink: "Link kopieren",
     linkCopied: "Link kopiert",
     btnInstall: "App installieren",
-    btnOffline: "Alle Symbole offline laden (≈ 5 MB)",
+    btnOffline: "Alles offline laden (≈ 7 MB)",
     offlineProgress: (n, total) => `Lade Symbole … ${n} / ${total}`,
-    offlineReady: "Offline bereit: alle Symbole sind gespeichert.",
+    offlineReady: "Offline bereit: alle Symbole und Sprachen sind gespeichert.",
     offlineFail: "Das Laden wurde unterbrochen. Bereits geladene Symbole bleiben erhalten.",
     iosHint: "Zum Installieren auf dem iPhone/iPad: Teilen-Symbol antippen und „Zum Home-Bildschirm“ wählen.",
     loading: "Lade Vokabular …",
     loadError: "Das Vokabular konnte nicht geladen werden. Bitte Seite neu laden.",
     hint: "Tipp: Auf ein Symbol klicken, um eine andere Bedeutung zu wählen.",
     empty: "Hier erscheinen die Symbole, sobald du etwas schreibst.",
-    detected: (l) => `Erkannte Sprache: <b>${l === "de" ? "Deutsch" : "Englisch"}</b>`,
+    detected: (l, auto) => `${auto ? "Erkannte Sprache" : "Sprache"}: <b>${LANG_NAMES.de[l]}</b>`,
     nSymbols: (n) => `${n} ${n === 1 ? "Symbol" : "Symbole"}`,
     missing: "Ohne Symbol",
     altsFor: (w) => `Bedeutung für „${w}“`,
@@ -44,11 +55,13 @@ const I18N = {
   },
   en: {
     title: "Bliss Translator",
-    tagline: "Turn German or English text into Blissymbols",
+    tagline: "Turn text into Blissymbols: German, English, French, Spanish, Italian, Portuguese and Esperanto",
     inputHeading: "Input",
     inputLabel: "Your text",
-    placeholder: "Type some German or English text here …",
+    placeholder: "Type some text here …",
     langAuto: "Auto",
+    moreLangs: "More languages",
+    moreLangsOption: "More …",
     optCaptions: "Words underneath",
     optArticles: "Skip articles",
     optGrammar: "Tense & plural",
@@ -61,16 +74,16 @@ const I18N = {
     btnLink: "Copy link",
     linkCopied: "Link copied",
     btnInstall: "Install app",
-    btnOffline: "Download all symbols for offline use (≈ 5 MB)",
+    btnOffline: "Download everything for offline use (≈ 7 MB)",
     offlineProgress: (n, total) => `Downloading symbols … ${n} / ${total}`,
-    offlineReady: "Ready offline: all symbols are stored.",
+    offlineReady: "Ready offline: all symbols and languages are stored.",
     offlineFail: "Download interrupted. Symbols already loaded are kept.",
     iosHint: "To install on iPhone/iPad: tap the Share icon and choose “Add to Home Screen”.",
     loading: "Loading vocabulary …",
     loadError: "Could not load the vocabulary. Please reload the page.",
     hint: "Tip: click a symbol to choose another meaning.",
     empty: "Symbols will appear here as soon as you type.",
-    detected: (l) => `Detected language: <b>${l === "de" ? "German" : "English"}</b>`,
+    detected: (l, auto) => `${auto ? "Detected language" : "Language"}: <b>${LANG_NAMES.en[l]}</b>`,
     nSymbols: (n) => `${n} ${n === 1 ? "symbol" : "symbols"}`,
     missing: "No symbol",
     altsFor: (w) => `Meaning for “${w}”`,
@@ -86,6 +99,11 @@ const I18N = {
 const EXAMPLES = {
   de: ["Ich gehe heute mit meinem Hund in die Schule.", "Die Kinder essen gerne Äpfel und trinken Wasser.", "Morgen werde ich nach Hause gehen."],
   en: ["The children are eating food at home.", "I went to school yesterday and saw my friends.", "She will go to the big house tomorrow."],
+  fr: ["Les enfants mangent des pommes à la maison.", "Hier, j'ai vu mes amis à l'école.", "Demain, nous allons manger avec ma mère."],
+  es: ["Los niños comen manzanas en casa.", "Ayer fui a la escuela con mis amigos.", "Mañana voy a beber agua con mi madre."],
+  it: ["I bambini mangiano le mele a casa.", "Ieri sono andato a scuola con i miei amici.", "Domani berremo acqua con la mamma."],
+  pt: ["As crianças comem maçãs em casa.", "Ontem fui à escola com os meus amigos.", "Amanhã vou beber água com a minha mãe."],
+  eo: ["La infanoj manĝas pomojn en la domo.", "Hieraŭ mi iris al la lernejo kun miaj amikoj.", "Morgaŭ mi trinkos akvon kun mia patrino."],
 };
 
 const $ = (s) => document.querySelector(s);
@@ -127,9 +145,26 @@ function applyI18n() {
   for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t[el.dataset.i18nHtml];
   for (const el of document.querySelectorAll("[data-i18n-ph]")) el.placeholder = t[el.dataset.i18nPh];
   for (const b of document.querySelectorAll(".ui-lang button")) b.setAttribute("aria-pressed", String(b.dataset.ui === state.ui));
+  fillMoreLangs();
+  applyChips();
+}
+
+function fillMoreLangs() {
+  const more = $("#lang-more");
+  const cur = more.value;
+  more.textContent = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = I18N[state.ui].moreLangsOption;
+  more.appendChild(first);
+  for (const c of MORE_LANGS) more.add(new Option(NATIVE[c], c));
+  more.value = cur;
+}
+
+function applyChips() {
   const chips = $("#example-chips");
   chips.textContent = "";
-  for (const ex of [...EXAMPLES[state.ui], ...EXAMPLES[state.ui === "de" ? "en" : "de"].slice(0, 1)]) {
+  for (const ex of exampleList()) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
@@ -142,6 +177,12 @@ function applyI18n() {
     });
     chips.appendChild(b);
   }
+}
+
+function exampleList() {
+  if (state.lang !== "auto") return EXAMPLES[state.lang];
+  const others = CODES.filter((c) => c !== state.ui);
+  return [...EXAMPLES[state.ui], ...others.map((c) => EXAMPLES[c][0])];
 }
 
 // ------------------------------------------------------------ rendering
@@ -165,13 +206,22 @@ function render() {
     toggleActions(false);
     return;
   }
-  const res = state.tr.translate(text, { lang: state.lang, skipArticles: state.skipArticles, grammar: state.grammar, choices: state.choices });
+  const lang = state.lang === "auto" ? state.tr.detectLang(text) : state.lang;
+  if (!state.tr.has(lang)) {
+    $("#status").textContent = t.loading;
+    ensureLang(lang).then(update, (err) => {
+      console.error(err);
+      out.innerHTML = `<p class="muted">${t.loadError}</p>`;
+    });
+    return;
+  }
+  const res = state.tr.translate(text, { lang, skipArticles: state.skipArticles, grammar: state.grammar, choices: state.choices });
   const s = state.size / 128; // px per grid unit
   const avail = Math.max(240, out.clientWidth - 16 - 2 * PAD * s);
   const lay = layout(state.tr, res.tokens, { width: avail / s, captions: state.captions, lang: state.ui });
   const label = (i) => {
     const tok = res.tokens[i];
-    if (tok.kind === "sym") return `${tok.surface}: ${labelFor(state.tr.S[tok.ids[tok.sel]], res.lang)}`;
+    if (tok.kind === "sym") return `${tok.surface}: ${state.tr.label(tok.ids[tok.sel], res.lang)}`;
     return tok.surface || "";
   };
   out.innerHTML = toSvg(lay, { pad: PAD, lang: state.ui, labels: label });
@@ -188,7 +238,7 @@ function render() {
   const unknown = words.filter((x) => x.kind === "unk");
   const n = words.length - unknown.length;
   const missing = unknown.length ? ` · ${t.missing}: <b>${[...new Set(unknown.map((u) => u.surface))].map(escapeHtml).join(", ")}</b>` : "";
-  $("#status").innerHTML = `${t.detected(res.lang)} · ${t.nSymbols(n)}${missing}`;
+  $("#status").innerHTML = `${t.detected(res.lang, state.lang === "auto")} · ${t.nSymbols(n)}${missing}`;
 }
 
 function toggleActions(on) {
@@ -196,6 +246,23 @@ function toggleActions(on) {
 }
 
 const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+// ------------------------------------------------------------ language data (loaded on demand)
+const langLoads = {};
+function ensureLang(code) {
+  if (state.tr.has(code)) return Promise.resolve();
+  langLoads[code] ||= fetch(`data/lang/${code}.json`)
+    .then((r) => {
+      if (!r.ok) throw new Error(`data/lang/${code}.json: ${r.status}`);
+      return r.json();
+    })
+    .then((d) => state.tr.addLanguage(code, d))
+    .catch((err) => {
+      delete langLoads[code];
+      throw err;
+    });
+  return langLoads[code];
+}
 
 // ------------------------------------------------------------ alternatives popover
 function closePop() {
@@ -217,7 +284,7 @@ function openPop(rect, tok) {
     pop.appendChild(p);
   } else if (tok.kind === "cmp") {
     const p = document.createElement("p");
-    p.textContent = `${t.compound} ${tok.parts.map((x) => labelFor(S[x.ids[0]], lang)).join(" + ")}`;
+    p.textContent = `${t.compound} ${tok.parts.map((x) => state.tr.label(x.ids[0], lang)).join(" + ")}`;
     pop.appendChild(p);
   } else if (tok.kind === "sym") {
     const list = document.createElement("div");
@@ -232,9 +299,9 @@ function openPop(rect, tok) {
       img.alt = "";
       img.loading = "lazy";
       const d = document.createElement("span");
-      d.textContent = labelFor(S[id], lang);
+      d.textContent = state.tr.label(id, lang);
       const sm = document.createElement("small");
-      sm.textContent = `${t.pos[S[id][2]] || ""} · #${id}`;
+      sm.textContent = `${t.pos[S[id][1]] || ""} · #${id}`;
       d.appendChild(sm);
       b.append(img, d);
       b.addEventListener("click", () => {
@@ -398,6 +465,7 @@ async function downloadAllSymbols() {
   offlineState = { done: false, busy: true, n: 0, total: ids.length, failed: false };
   $("#btn-offline").disabled = true;
   try {
+    await Promise.all(CODES.map((c) => fetch(`data/lang/${c}.json`))); // the service worker keeps them
     const todo = [];
     for (const id of ids) if (!(await cache.match(`symbols/${id}.svg`))) todo.push(id);
     offlineState.n = ids.length - todo.length;
@@ -467,13 +535,17 @@ async function initPwa() {
 function setLang(l) {
   state.lang = l;
   for (const b of document.querySelectorAll("#lang-seg button")) b.setAttribute("aria-checked", String(b.dataset.lang === l));
+  const more = $("#lang-more");
+  more.value = MORE_LANGS.includes(l) ? l : "";
+  more.classList.toggle("active", MORE_LANGS.includes(l));
+  applyChips();
   state.choices = {};
   update();
 }
 
 async function init() {
   const hash = new URLSearchParams(location.hash.slice(1));
-  if (hash.get("l") === "de" || hash.get("l") === "en") state.lang = hash.get("l");
+  if (CODES.includes(hash.get("l"))) state.lang = hash.get("l");
 
   if (window.innerWidth < 520) state.size = 48; // smaller default on phones
   applyI18n();
@@ -487,6 +559,7 @@ async function init() {
       update();
     });
   for (const b of document.querySelectorAll("#lang-seg button")) b.addEventListener("click", () => setLang(b.dataset.lang));
+  $("#lang-more").addEventListener("change", (e) => e.target.value && setLang(e.target.value));
   $("#opt-captions").addEventListener("change", (e) => ((state.captions = e.target.checked), update()));
   $("#opt-articles").addEventListener("change", (e) => ((state.skipArticles = e.target.checked), update()));
   $("#opt-grammar").addEventListener("change", (e) => ((state.grammar = e.target.checked), update()));
@@ -502,17 +575,18 @@ async function init() {
   }).observe($("#out"));
 
   try {
-    const [lex, overrides] = await Promise.all([
-      fetch("data/lexicon.json").then((r) => r.json()),
+    const [symbols, overrides] = await Promise.all([
+      fetch("data/symbols.json").then((r) => r.json()),
       fetch("data/overrides.json").then((r) => r.json()),
     ]);
-    state.tr = new Translator(lex, overrides);
+    state.tr = new Translator(symbols, overrides);
+    await Promise.all(["de", "en", state.lang].filter((c, i, a) => c !== "auto" && a.indexOf(c) === i).map(ensureLang));
   } catch (err) {
     console.error(err);
     $("#out").innerHTML = `<p class="muted">${I18N[state.ui].loadError}</p>`;
     return;
   }
-  $("#text").value = hash.get("t") ?? EXAMPLES[state.ui][0];
+  $("#text").value = hash.get("t") ?? EXAMPLES[state.lang === "auto" ? state.ui : state.lang][0];
   update();
   initPwa();
 }

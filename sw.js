@@ -1,11 +1,11 @@
 // Service worker: makes the translator work offline.
 //
-// * App shell (HTML/CSS/JS/data) is precached on install and refreshed in the
-//   background on every visit (stale-while-revalidate), so updates arrive after one reload.
+// * App shell (HTML/CSS/JS/data of German and English) is precached on install and refreshed in the
+//   background on every visit; the other language files are cached when first used (stale-while-revalidate), so updates arrive after one reload.
 // * Symbol SVGs are cached the first time they are shown (cache-first). The page can also
 //   download all of them on request ("Offline-Modus"). Their cache is separate and only
 //   needs a new name when the BCI-AV data changes.
-const SHELL = "bliss-shell-v1";
+const SHELL = "bliss-shell-v2";
 const SYMBOLS = "bliss-symbols-v1";
 
 const SHELL_FILES = [
@@ -14,10 +14,20 @@ const SHELL_FILES = [
   "css/style.css",
   "js/app.js",
   "js/translate.js",
-  "js/lemma.js",
+  "js/langs/index.js",
+  "js/langs/util.js",
+  "js/langs/de.js",
+  "js/langs/en.js",
+  "js/langs/fr.js",
+  "js/langs/es.js",
+  "js/langs/it.js",
+  "js/langs/pt.js",
+  "js/langs/eo.js",
   "js/layout.js",
   "js/config.js",
-  "data/lexicon.json",
+  "data/symbols.json",
+  "data/lang/de.json",
+  "data/lang/en.json",
   "data/overrides.json",
   "manifest.webmanifest",
   "icons/icon.svg",

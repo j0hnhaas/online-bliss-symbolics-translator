@@ -1,11 +1,4 @@
-// Small rule-based lemmatizers for German and English.
-//
-// They return an ordered list of candidate base forms for a word. The translator
-// tries each candidate against the Bliss lexicon and uses the first one found, so
-// rules may over-generate. `feat` carries grammatical hints:
-//   pl    plural noun form          past  simple past
-//   part  past participle           inf   infinitive / plain base form
-//   pos   expected part of speech: n noun, v verb, a adjective
+// German: lemmatizer, compound splitter and grammar rules.
 
 // ---------------------------------------------------------------- German
 
@@ -224,136 +217,32 @@ export function compoundSplitsDe(word, known) {
   return out[0] || null;
 }
 
-// ---------------------------------------------------------------- English
+// ---------------------------------------------------------------- plug-in
 
-const EN_IRREG_VERBS = `
-be|am is are|was were|been
-have|has|had|had
-do|does|did|done
-go|goes|went|gone
-eat||ate|eaten
-see||saw|seen
-come||came|come
-take||took|taken
-give||gave|given
-make||made|made
-say||said|said
-run||ran|run
-write||wrote|written
-drink||drank|drunk
-sleep||slept|slept
-sit||sat|sat
-stand||stood|stood
-find||found|found
-think||thought|thought
-bring||brought|brought
-buy||bought|bought
-know||knew|known
-speak||spoke|spoken
-get||got|gotten
-tell||told|told
-feel||felt|felt
-leave||left|left
-keep||kept|kept
-meet||met|met
-pay||paid|paid
-sell||sold|sold
-send||sent|sent
-build||built|built
-fall||fell|fallen
-fly||flew|flown
-sing||sang|sung
-swim||swam|swum
-begin||began|begun
-drive||drove|driven
-ride||rode|ridden
-choose||chose|chosen
-wear||wore|worn
-win||won|won
-lose||lost|lost
-hear||heard|heard
-understand||understood|understood
-teach||taught|taught
-catch||caught|caught
-read||read|read
-put||put|put
-set||set|set
-cut||cut|cut
-hold||held|held
-lie||lay|lain
-sleep||slept|slept
-`;
-const enIrregular = new Map();
-for (const line of EN_IRREG_VERBS.trim().split("\n")) {
-  const [lemma, pres, past, part] = line.split("|");
-  for (const f of (pres || "").split(" ").filter(Boolean)) enIrregular.set(f, { lemma, feat: { pos: "v", irreg: true } });
-  if (part && !enIrregular.has(part)) enIrregular.set(part, { lemma, feat: { pos: "v", part: true, irreg: true } });
-  if (past) enIrregular.set(past, { lemma, feat: { pos: "v", past: true, irreg: true } });
-}
-const EN_IRREG_OTHER = {
-  children: ["child", { pl: true, pos: "n" }], men: ["man", { pl: true, pos: "n" }], women: ["woman", { pl: true, pos: "n" }],
-  feet: ["foot", { pl: true, pos: "n" }], teeth: ["tooth", { pl: true, pos: "n" }], mice: ["mouse", { pl: true, pos: "n" }],
-  people: ["person", { pl: true, pos: "n" }], geese: ["goose", { pl: true, pos: "n" }], lives: ["life", { pl: true, pos: "n" }],
-  better: ["good", { pos: "a" }], best: ["good", { pos: "a" }], worse: ["bad", { pos: "a" }], worst: ["bad", { pos: "a" }],
-  more: ["much", { pos: "a" }], most: ["much", { pos: "a" }],
+export default {
+  code: "de",
+  name: "Deutsch",
+  capitalNoun: true,
+  articles: new Set(["der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem", "einer", "eines"]),
+  markers: new Set("der die das und ist ich nicht mit ein eine zu den dem von sie wir auch auf für war sind habe hat wird aber oder wie was wo wer ihr du er es im am zum zur dass weil wenn nur noch schon sehr mein dein".split(" ")),
+  chars: /[äöüß]/,
+  lemmas: lemmasDe,
+  variants: deVariants,
+  compound: compoundSplitsDe,
+  // lower-case word that looks like an infinitive: verb reading first
+  contextHint: (surface) => (/(en|ln|rn)$/.test(surface) && surface === surface.toLowerCase() ? "v" : null),
+  grammar(toks, i, g) {
+    const t = toks[i];
+    const lw = t.surface.toLowerCase();
+    if (t.lemma === "werden" && !t.feat.past) {
+      const j = g.forward(i, g.isInf);
+      if (j >= 0) g.setTense(t, j, "future");
+    } else if (t.lemma === "haben" || t.lemma === "sein") {
+      const j = g.forward(i, g.hasPart);
+      if (j >= 0) g.setTense(t, j, "past");
+    } else if (lw === "zu") {
+      const j = g.forward(i, g.isInf, 1);
+      if (j === i + 1) t.drop = true;
+    }
+  },
 };
-
-export function lemmasEn(word) {
-  const w = word.toLowerCase().replace(/’/g, "'");
-  const cands = [];
-  const push = (lemma, feat = {}) => lemma && lemma.length >= 2 && cands.push({ lemma, feat });
-  if (enIrregular.has(w)) {
-    const { lemma, feat } = enIrregular.get(w);
-    push(lemma, feat);
-  }
-  if (EN_IRREG_OTHER[w]) push(EN_IRREG_OTHER[w][0], { ...EN_IRREG_OTHER[w][1], irreg: true });
-  const undouble = (s) => (/(.)\1$/.test(s) && !/(ss|ll|ff|zz)$/.test(s) ? s.slice(0, -1) : null);
-
-  if (w.endsWith("'s")) push(w.slice(0, -2));
-  // plural nouns / 3rd person verbs
-  if (w.endsWith("ies")) push(w.slice(0, -3) + "y", { pl: true });
-  if (w.endsWith("ves")) {
-    push(w.slice(0, -3) + "f", { pl: true });
-    push(w.slice(0, -3) + "fe", { pl: true });
-  }
-  if (w.endsWith("es")) push(w.slice(0, -2), { pl: true });
-  if (w.endsWith("s") && !w.endsWith("ss")) push(w.slice(0, -1), { pl: true });
-  // past / participle
-  if (w.endsWith("ied")) push(w.slice(0, -3) + "y", { pos: "v", past: true, part: true });
-  if (w.endsWith("ed")) {
-    const b = w.slice(0, -2);
-    const f = { pos: "v", past: true, part: true };
-    const u = undouble(b);
-    if (u) push(u, f);
-    push(b, f);
-    push(b + "e", f);
-  }
-  // -ing
-  if (w.endsWith("ing") && w.length > 4) {
-    const b = w.slice(0, -3);
-    const u = undouble(b);
-    if (u) push(u, { pos: "v" });
-    push(b, { pos: "v" });
-    push(b + "e", { pos: "v" });
-  }
-  // comparatives, adverbs
-  if (w.endsWith("ier")) push(w.slice(0, -3) + "y", { pos: "a" });
-  if (w.endsWith("iest")) push(w.slice(0, -4) + "y", { pos: "a" });
-  if (w.endsWith("er")) {
-    const b = w.slice(0, -2);
-    const u = undouble(b);
-    if (u) push(u, { pos: "a" });
-    push(b, { pos: "a" });
-    push(b + "e", { pos: "a" });
-  }
-  if (w.endsWith("est")) {
-    const b = w.slice(0, -3);
-    const u = undouble(b);
-    if (u) push(u, { pos: "a" });
-    push(b, { pos: "a" });
-    push(b + "e", { pos: "a" });
-  }
-  if (w.endsWith("ily")) push(w.slice(0, -3) + "y", { pos: "a", adv: true });
-  if (w.endsWith("ly")) push(w.slice(0, -2), { pos: "a", adv: true });
-  return cands;
-}

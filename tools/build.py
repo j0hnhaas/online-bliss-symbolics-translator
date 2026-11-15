@@ -2,19 +2,24 @@
 """Build the web assets from the BCI-AV release files.
 
 Usage:
-    python3 tools/build.py BCI-AV.csv bliss_svg_id.zip [OUTDIR]
+    python3 tools/build.py BCI-AV.csv --svg-zip bliss_svg_id.zip [--out DIR]
+    python3 tools/build.py BCI-AV.csv --reuse-metrics            # words only, keep symbols/
 
 Inputs (both from https://blissymbolics.org, BCI-AV release):
   * the spreadsheet exported as CSV (columns: BCI-AV#, English, POS, German, ...)
   * bliss_svg_id.zip (one SVG per symbol, named <BCI-AV#>.svg)
 
-Outputs (relative to OUTDIR, default = repository root):
-  * symbols/<id>.svg   cleaned, horizontally cropped, theme-neutral SVGs
-  * data/lexicon.json  compact word -> symbol index for German and English
+Outputs (relative to --out, default = repository root):
+  * symbols/<id>.svg      cleaned, horizontally cropped, theme-neutral SVGs
+  * data/symbols.json     language independent symbol table (metrics, part of speech, verb bases)
+  * data/lang/<code>.json one file per input language: word -> symbol ids and display labels
+
+Add a language by adding it to LANGS below (CSV column name) and a plug-in in js/langs/.
 
 Requires: python3, lxml, numpy, Pillow and the `rsvg-convert` binary.
 The BCI-AV data is (c) Blissymbolics Communication International, CC BY-SA 4.0.
 """
+import argparse
 import csv
 import io
 import json
@@ -131,6 +136,11 @@ def ink_bounds(svg_text, w, h, gap=20.0):
 # body is y=130..258, indicators sit above at ~y=66; symbols that stick out
 # further get their own, larger viewBox and are aligned by the browser.
 GY0, GY1 = 62, 266
+# code -> column name in the BCI-AV spreadsheet
+LANGS = {
+    "en": "English", "de": "German", "fr": "French", "es": "Spanish",
+    "it": "Italian", "pt": "Portugese", "eo": "Esperanto",
+}
 POS_CODE = {"YELLOW": "n", "RED": "v", "BLUE": "p", "GREEN": "a", "WHITE": "o", "GRAY": "g"}  # g = interjections/indicators
 LETTER = re.compile(r"\((lower|upper)case\)")
 DEPRECATED = re.compile(r"\((OLD|ALT)\)|SUPERSEDED", re.I)
@@ -154,27 +164,26 @@ def split_top(s):
 
 
 def term_of(gloss, lang):
-    g = gloss
+    g = gloss.replace("\u2019", "'")
     if lang == "en":
         g = g.replace("_", " ")
         g = re.sub(r"-\(to\)", "", g)
-    g = re.sub(r"\([^)]*\)", " ", g)  # drop parentheticals
+    g = re.sub(r"\([^)]*\)", " ", g)  # drop parentheticals: "niño(a)", "chien (animal)"
+    g = re.sub(r"/\w{1,3}$", "", g.strip())  # "bambino/a" -> "bambino"
     g = re.sub(r"\s+", " ", g).strip(" -").lower()
     return g
 
 
-def main():
-    csv_path, zip_path = Path(sys.argv[1]), Path(sys.argv[2])
-    out = Path(sys.argv[3]) if len(sys.argv) > 3 else Path(__file__).resolve().parent.parent
-    (out / "symbols").mkdir(parents=True, exist_ok=True)
-    (out / "data").mkdir(parents=True, exist_ok=True)
+def split_glosses(value):
+    out = []
+    for part in value.split(";"):
+        out.extend(split_top(part))
+    return out
 
-    rows = list(csv.reader(open(csv_path, encoding="utf-8")))
-    head = rows[0]
-    ix = {n: head.index(n) for n in ("BCI-AV#", "English", "POS", "German", "Derivation - explanation")}
+
+def render_symbols(rows, ix, zip_path, out):
+    """Clean, crop and write all SVGs; return per-symbol metrics."""
     z = zipfile.ZipFile(zip_path)
-
-    # ---- pass 1: clean + measure
     ids = [r[ix["BCI-AV#"]] for r in rows[1:]]
 
     def pass1(i):
@@ -189,6 +198,7 @@ def main():
         res = list(ex.map(pass1, ids))
     total = 0
     meta = {}
+    (out / "symbols").mkdir(parents=True, exist_ok=True)
     for i, parts, stroke, cw, ch, x0, x1, iy0, iy1, fx0, fx1, ftop in res:
         f = stroke / 7.0
         pad = 0.5 * stroke
@@ -200,36 +210,72 @@ def main():
         (out / "symbols" / ("%s.svg" % i)).write_text(svg)
         total += len(svg)
         # width, top, bottom, first-character centre-x and first-character top (grid units)
-        meta[i] = (round(vw / f, 1), vy0, vy1, round(((fx0 + fx1) / 2 - vx) / f, 1), round(ftop, 1))
+        meta[i] = [round(vw / f, 1), vy0, vy1, round(((fx0 + fx1) / 2 - vx) / f, 1), round(ftop, 1)]
     print("symbols written: %d, %.1f MB" % (len(res), total / 1e6))
+    return meta
 
-    # ---- lexicon
-    symbols, de_idx, en_idx = {}, {}, {}
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("csv")
+    ap.add_argument("--svg-zip", help="bliss_svg_id.zip (renders symbols/ and measures them)")
+    ap.add_argument("--reuse-metrics", action="store_true", help="reuse the metrics in data/symbols.json, do not touch symbols/")
+    ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent))
+    a = ap.parse_args()
+    out = Path(a.out)
+    (out / "data" / "lang").mkdir(parents=True, exist_ok=True)
+
+    rows = list(csv.reader(open(a.csv, encoding="utf-8")))
+    head = rows[0]
+    ix = {n: head.index(n) for n in ("BCI-AV#", "English", "POS", "Derivation - explanation")}
+    col = {code: head.index(name) for code, name in LANGS.items()}
+    get = lambda r, i: r[i] if len(r) > i else ""
+
+    if a.reuse_metrics:
+        old = json.loads((out / "data" / "symbols.json").read_text())
+        meta = {sid: v[3:] for sid, v in old["s"].items()}
+    else:
+        meta = render_symbols(rows, ix, a.svg_zip, out)
+
+    # ---- symbol table
+    symbols = {}
+    glosses = {}  # lang -> sid -> [gloss]
+    for code in LANGS:
+        glosses[code] = {}
     for r in rows[1:]:
         sid = r[ix["BCI-AV#"]]
-        en, de = r[ix["English"]], r[ix["German"]]
+        en = r[ix["English"]]
         pos = POS_CODE.get(r[ix["POS"]], "o")
-        dep = 1 if (DEPRECATED.search(en) or DEPRECATED.search(de) or DEPRECATED.search(r[ix["Derivation - explanation"]])) else 0
-        en_glosses = split_top(en)
-        de_glosses = split_top(de)
+        dep = 1 if (DEPRECATED.search(en) or DEPRECATED.search(get(r, col["de"])) or DEPRECATED.search(r[ix["Derivation - explanation"]])) else 0
+        en_glosses = split_glosses(en)
         label_en = en_glosses[0].replace("_", " ") if en_glosses else ""
-        label_de = de_glosses[0] if de_glosses else label_en
-        symbols[sid] = [label_en, label_de, pos, dep] + list(meta[sid])
-        if en.startswith("indicator") or LETTER.search(en):
-            continue  # grammar indicators and single letters are never looked up by word
-        for lang, glosses, idx in (("en", en_glosses, en_idx), ("de", de_glosses, de_idx)):
-            seen = set()
-            for k, g in enumerate(glosses):
-                t = term_of(g, lang)
-                if not t or t in seen:
-                    continue
-                seen.add(t)
-                idx.setdefault(t, []).append((sid, k, len(glosses)))
+        symbols[sid] = [label_en, pos, dep] + meta[sid]  # [label, pos, deprecated, w, y0, y1, cx, ftop]
+        for code in LANGS:
+            glosses[code][sid] = split_glosses(get(r, col[code]))
 
     def rank(entries):
         # non-deprecated first, then primary gloss, then fewer synonyms, then lower id
-        entries.sort(key=lambda e: (symbols[e[0]][3], min(e[1], 1), e[2], int(e[0])))
+        entries.sort(key=lambda e: (symbols[e[0]][2], min(e[1], 1), e[2], int(e[0])))
         return [e[0] for e in entries]
+
+    # ---- per-language word indexes
+    indexes = {}
+    for code in LANGS:
+        idx = {}
+        for r in rows[1:]:
+            sid = r[ix["BCI-AV#"]]
+            en = r[ix["English"]]
+            if en.startswith("indicator") or LETTER.search(en):
+                continue  # grammar indicators and single letters are never looked up by word
+            gl = glosses[code][sid]
+            seen = set()
+            for k, g in enumerate(gl):
+                t = term_of(g, code)
+                if not t or t in seen:
+                    continue
+                seen.add(t)
+                idx.setdefault(t, []).append((sid, k, len(gl)))
+        indexes[code] = idx
 
     # Verb symbols are "<base> + action indicator". To show tense we must swap
     # that indicator, so remember the unmarked base symbol where it is a single gloss.
@@ -237,33 +283,41 @@ def main():
     deriv = {r[ix["BCI-AV#"]]: r[ix["Derivation - explanation"]] for r in rows[1:]}
     bases = {}
     for sid, sym in symbols.items():
-        if sym[2] != "v":
+        if sym[1] != "v":
             continue
         m = ACTION.match(deriv[sid].strip())
         if not m or "+" in m.group(1):
             continue
-        cands = [c for c in en_idx.get(term_of(m.group(1), "en"), []) if symbols[c[0]][2] not in ("v", "g")]
+        cands = [c for c in indexes["en"].get(term_of(m.group(1), "en"), []) if symbols[c[0]][1] not in ("v", "g")]
         if cands:
             bases[sid] = rank(cands)[0]
     # verbs that are plain characters (no action indicator in their derivation): a tense
     # indicator can simply be placed above them
     overlay = [
         sid for sid, sym in symbols.items()
-        if sym[2] == "v" and sid not in bases and "action indicator" not in deriv[sid].lower()
+        if sym[1] == "v" and sid not in bases and "action indicator" not in deriv[sid].lower()
     ]
     print("verbs with swappable action indicator:", len(bases), "| overlay-only verbs:", len(overlay))
 
-    lex = {
-        "v": 1,
+    dump = lambda o: json.dumps(o, ensure_ascii=False, separators=(",", ":"))
+    (out / "data" / "symbols.json").write_text(dump({
+        "v": 2,
+        "win": [GY0, GY1],  # common vertical window of the symbol SVGs (grid units)
+        "fields": ["label", "pos", "deprecated", "width", "top", "bottom", "cx", "ftop"],
+        "s": symbols,
         "ab": bases,
         "ov": overlay,
-        "win": [GY0, GY1],  # common vertical window of the symbol SVGs (grid units)
-        "s": symbols,
-        "de": {t: rank(e) for t, e in sorted(de_idx.items())},
-        "en": {t: rank(e) for t, e in sorted(en_idx.items())},
-    }
-    (out / "data" / "lexicon.json").write_text(json.dumps(lex, ensure_ascii=False, separators=(",", ":")))
-    print("terms: de=%d en=%d" % (len(lex["de"]), len(lex["en"])))
+    }))
+    for code in LANGS:
+        terms = {t: rank(e) for t, e in sorted(indexes[code].items())}
+        labels = {}
+        for sid, gl in glosses[code].items():
+            if gl:
+                lab = gl[0].replace("_", " ") if code == "en" else gl[0]
+                if lab != symbols[sid][0] or code == "en":
+                    labels[sid] = lab
+        (out / "data" / "lang" / ("%s.json" % code)).write_text(dump({"t": terms, "l": labels}))
+        print("%s: %d terms, %d labels" % (code, len(terms), len(labels)))
 
 
 if __name__ == "__main__":

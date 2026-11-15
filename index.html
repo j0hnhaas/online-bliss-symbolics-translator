@@ -30,7 +30,7 @@
     <section class="panel" aria-labelledby="in-h">
       <h2 id="in-h" class="sr-only" data-i18n="inputHeading">Eingabe</h2>
       <label for="text" class="label" data-i18n="inputLabel">Dein Text</label>
-      <textarea id="text" rows="4" spellcheck="false" autocomplete="off" data-i18n-ph="placeholder" placeholder="Schreibe hier einen deutschen oder englischen Text …"></textarea>
+      <textarea id="text" rows="4" spellcheck="false" autocomplete="off" data-i18n-ph="placeholder" placeholder="Schreibe hier einen Text …"></textarea>
 
       <div class="controls">
         <div class="seg" role="radiogroup" aria-label="Sprache des Textes" id="lang-seg">
@@ -38,6 +38,9 @@
           <button type="button" role="radio" data-lang="de" aria-checked="false">Deutsch</button>
           <button type="button" role="radio" data-lang="en" aria-checked="false">English</button>
         </div>
+        <label class="more-lang"><span class="sr-only" data-i18n="moreLangs">Weitere Sprachen</span>
+          <select id="lang-more"></select>
+        </label>
         <label class="check"><input type="checkbox" id="opt-captions" checked> <span data-i18n="optCaptions">Wörter darunter</span></label>
         <label class="check"><input type="checkbox" id="opt-articles" checked> <span data-i18n="optArticles">Artikel weglassen</span></label>
         <label class="check"><input type="checkbox" id="opt-grammar" checked> <span data-i18n="optGrammar">Zeit &amp; Plural</span></label>

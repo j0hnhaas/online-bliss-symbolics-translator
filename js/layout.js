@@ -1,7 +1,7 @@
 // Layout of Bliss tokens into lines, in "grid units" (1 matrix square = 128 units,
 // stroke width = 7 units). Produces a flat list of drawing items that is rendered
 // either as an inline SVG (preview) or as a self-contained SVG/PNG (export).
-import { IND } from "./translate.js";
+import { IND, F } from "./translate.js";
 
 const SQUARE = 128;
 const STROKE = 7;
@@ -15,21 +15,21 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 function placeSymbol(tr, tok, view) {
   const S = tr.S;
   const base = S[view.main];
-  const items = [{ t: "img", id: view.main, x: 0, y: base[5], w: base[4], h: base[6] - base[5] }];
-  let w = base[4];
-  let minY = base[5];
-  let maxY = base[6];
+  const items = [{ t: "img", id: view.main, x: 0, y: base[F.TOP], w: base[F.W], h: base[F.BOTTOM] - base[F.TOP] }];
+  let w = base[F.W];
+  let minY = base[F.TOP];
+  let maxY = base[F.BOTTOM];
   if (view.ind) {
     const id = IND[view.ind];
     const ind = S[id];
     // Rules 4.3.3/4.3.4: centred above the first character, raised for tall characters.
-    const dy = Math.min(0, base[8] - BODY_TOP);
-    const left = base[7] - ind[4] / 2;
+    const dy = Math.min(0, base[F.FTOP] - BODY_TOP);
+    const left = base[F.CX] - ind[F.W] / 2;
     const ox = Math.max(0, -left);
     for (const it of items) it.x += ox;
-    items.push({ t: "img", id, x: ox + left, y: ind[5] + dy, w: ind[4], h: ind[6] - ind[5] });
-    w = Math.max(ox + base[4], ox + left + ind[4]);
-    minY = Math.min(minY, ind[5] + dy);
+    items.push({ t: "img", id, x: ox + left, y: ind[F.TOP] + dy, w: ind[F.W], h: ind[F.BOTTOM] - ind[F.TOP] });
+    w = Math.max(ox + base[F.W], ox + left + ind[F.W]);
+    minY = Math.min(minY, ind[F.TOP] + dy);
   }
   return { items, w, minY, maxY };
 }
