@@ -7,7 +7,7 @@
 // * Symbol SVGs are cached the first time they are shown (cache-first). The page can also
 //   download all of them on request ("Offline-Modus"). Their cache is separate and only
 //   needs a new name when the BCI-AV data changes.
-const SHELL = "bliss-shell-v3";
+const SHELL = "bliss-shell-v4";
 const SYMBOLS = "bliss-symbols-v1";
 
 const SHELL_FILES = [
@@ -15,6 +15,7 @@ const SHELL_FILES = [
   "index.html",
   "css/style.css",
   "js/app.js",
+  "js/i18n.js",
   "js/translate.js",
   "js/langs/index.js",
   "js/langs/util.js",

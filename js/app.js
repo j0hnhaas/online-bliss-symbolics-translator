@@ -1,11 +1,12 @@
 import { Translator } from "./translate.js";
 import { CODES } from "./langs/index.js";
 import { layout, toSvg } from "./layout.js";
-import { GOATCOUNTER, REPO_URL } from "./config.js";
+import { GOATCOUNTER } from "./config.js";
+import { I18N, LANG_NAMES, NATIVE, EXAMPLES, START } from "./i18n.js";
 
 // index.html, style.css and app.js must be the same build (see tools/stamp.py). A CDN or browser
 // cache can serve a mix right after a deploy; then drop the shell caches and reload once.
-const BUILD = "6af9f2f3";
+const BUILD = "6af9f483";
 function checkBuild() {
   const html = document.querySelector('meta[name="build"]')?.content;
   const css = getComputedStyle(document.documentElement).getPropertyValue("--build").replace(/["'\s]/g, "");
@@ -28,121 +29,10 @@ function checkBuild() {
 if (document.readyState === "complete") checkBuild();
 else addEventListener("load", checkBuild, { once: true });
 
-const LANG_NAMES = {
-  de: { de: "Deutsch", en: "Englisch", fr: "Französisch", es: "Spanisch", it: "Italienisch", pt: "Portugiesisch", eo: "Esperanto" },
-  en: { de: "German", en: "English", fr: "French", es: "Spanish", it: "Italian", pt: "Portuguese", eo: "Esperanto" },
-};
-// each language under its own name, as shown in the switcher
-const NATIVE = { de: "Deutsch", en: "English", fr: "Français", es: "Español", it: "Italiano", pt: "Português", eo: "Esperanto" };
-
-const I18N = {
-  de: {
-    title: "Bliss-Übersetzer",
-    tagline: "Zu Ehren des Werks von Charles K. Bliss",
-    inputHeading: "Eingabe",
-    inputLabel: "Dein Text",
-    placeholder: "Schreibe hier einen Text …",
-    langAuto: "Auto",
-    langLabel: "Sprache",
-    textLang: "Textsprache",
-    uiLang: "Oberfläche",
-    options: "Optionen & Beispiele",
-    btnClear: "Text löschen",
-    about: "Info & Lizenz",
-    optCaptions: "Wörter darunter",
-    optArticles: "Artikel weglassen",
-    optGrammar: "Zeit & Plural",
-    optSize: "Größe",
-    examples: "Beispiele",
-    outputLabel: "Blissymbole",
-    btnPng: "Bildexport",
-    btnPrint: "Drucken",
-    btnLinkApp: "App teilen",
-    btnLinkText: "Text teilen",
-    linkCopied: "Link kopiert",
-    btnInstall: "App installieren",
-    btnOffline: "Alles offline laden (≈ 7 MB)",
-    offlineProgress: (n, total) => `Lade Symbole … ${n} / ${total}`,
-    offlineReady: "Offline bereit: alle Symbole und Sprachen sind gespeichert.",
-    offlineFail: "Das Laden wurde unterbrochen. Bereits geladene Symbole bleiben erhalten.",
-    iosHint: "Zum Installieren auf dem iPhone/iPad: Teilen-Symbol antippen und „Zum Home-Bildschirm“ wählen.",
-    loading: "Lade Vokabular …",
-    loadError: "Das Vokabular konnte nicht geladen werden. Bitte Seite neu laden.",
-    hint: "Tipp: Auf ein Symbol klicken, um eine andere Bedeutung zu wählen.",
-    empty: "Hier erscheinen die Symbole, sobald du etwas schreibst.",
-    detected: (l, auto) => `${auto ? "Erkannte Sprache" : "Sprache"}: <b>${LANG_NAMES.de[l]}</b>`,
-    nSymbols: (n) => `${n} ${n === 1 ? "Symbol" : "Symbole"}`,
-    missing: "Ohne Symbol",
-    altsFor: (w) => `Bedeutung für „${w}“`,
-    noAlt: "Für dieses Wort gibt es kein Symbol im BCI-Vokabular. Es wird als Text angezeigt.",
-    compound: "Zusammengesetztes Wort: Bliss beginnt mit dem Oberbegriff (Klassifikator).",
-    pos: { n: "Ding", v: "Handlung", p: "Person", a: "Eigenschaft", o: "Sonstiges", g: "Ausruf" },
-    privacy: "Diese Seite zählt Besuche anonym mit GoatCounter (ohne Cookies). Der eingegebene Text bleibt in deinem Browser.",
-    footerLicense: `Blissymbole © <a href="https://www.blissymbolics.org/" rel="noopener">Blissymbolics Communication International (BCI)</a>, Vokabular BCI-AV 2026-09-12, <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" rel="noopener">CC BY-SA 4.0</a>. Daten in <code>symbols/</code> und <code>data/</code> stehen unter derselben Lizenz; der Programmcode unter MIT (<a href="${REPO_URL}" rel="noopener">GitHub</a>).`,
-    footerNote: "Inoffizielles Hilfsmittel: Die Zuordnung erfolgt wortweise anhand des BCI-Vokabulars. Tempus- und Plural-Indikatoren werden nach den BCI Fundamental Rules über das erste Zeichen gesetzt. Für Bliss-Grammatik und Lernen siehe blissymbolics.org.",
-  },
-  en: {
-    title: "Bliss Translator",
-    tagline: "To honor the work of Charles K. Bliss",
-    inputHeading: "Input",
-    inputLabel: "Your text",
-    placeholder: "Type some text here …",
-    langAuto: "Auto",
-    langLabel: "Language",
-    textLang: "Text language",
-    uiLang: "Interface",
-    options: "Options & examples",
-    btnClear: "Clear text",
-    about: "About & licence",
-    optCaptions: "Words underneath",
-    optArticles: "Skip articles",
-    optGrammar: "Tense & plural",
-    optSize: "Size",
-    examples: "Examples",
-    outputLabel: "Blissymbols",
-    btnPng: "Export image",
-    btnPrint: "Print",
-    btnLinkApp: "Share app",
-    btnLinkText: "Share text",
-    linkCopied: "Link copied",
-    btnInstall: "Install app",
-    btnOffline: "Download everything for offline use (≈ 7 MB)",
-    offlineProgress: (n, total) => `Downloading symbols … ${n} / ${total}`,
-    offlineReady: "Ready offline: all symbols and languages are stored.",
-    offlineFail: "Download interrupted. Symbols already loaded are kept.",
-    iosHint: "To install on iPhone/iPad: tap the Share icon and choose “Add to Home Screen”.",
-    loading: "Loading vocabulary …",
-    loadError: "Could not load the vocabulary. Please reload the page.",
-    hint: "Tip: click a symbol to choose another meaning.",
-    empty: "Symbols will appear here as soon as you type.",
-    detected: (l, auto) => `${auto ? "Detected language" : "Language"}: <b>${LANG_NAMES.en[l]}</b>`,
-    nSymbols: (n) => `${n} ${n === 1 ? "symbol" : "symbols"}`,
-    missing: "No symbol",
-    altsFor: (w) => `Meaning for “${w}”`,
-    noAlt: "The BCI vocabulary has no symbol for this word. It is shown as text.",
-    compound: "Compound word: Bliss starts with the classifier (the head word).",
-    pos: { n: "thing", v: "action", p: "person", a: "description", o: "other", g: "interjection" },
-    privacy: "This site counts visits anonymously with GoatCounter (no cookies). The text you type stays in your browser.",
-    footerLicense: `Blissymbols © <a href="https://www.blissymbolics.org/" rel="noopener">Blissymbolics Communication International (BCI)</a>, vocabulary BCI-AV 2026-09-12, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener">CC BY-SA 4.0</a>. The data in <code>symbols/</code> and <code>data/</code> uses the same licence; the code is MIT (<a href="${REPO_URL}" rel="noopener">GitHub</a>).`,
-    footerNote: "Unofficial helper: words are mapped one by one using the BCI vocabulary. Tense and plural indicators are placed above the first character following the BCI Fundamental Rules. For Bliss grammar and learning see blissymbolics.org.",
-  },
-};
-
-const EXAMPLES = {
-  de: ["Ich gehe heute mit meinem Hund in die Schule.", "Die Kinder essen gerne Äpfel und trinken Wasser.", "Morgen werde ich nach Hause gehen."],
-  en: ["The children are eating food at home.", "I went to school yesterday and saw my friends.", "She will go to the big house tomorrow."],
-  fr: ["Les enfants mangent des pommes à la maison.", "Hier, j'ai vu mes amis à l'école.", "Demain, nous allons manger avec ma mère."],
-  es: ["Los niños comen manzanas en casa.", "Ayer fui a la escuela con mis amigos.", "Mañana voy a beber agua con mi madre."],
-  it: ["I bambini mangiano le mele a casa.", "Ieri sono andato a scuola con i miei amici.", "Domani berremo acqua con la mamma."],
-  pt: ["As crianças comem maçãs em casa.", "Ontem fui à escola com os meus amigos.", "Amanhã vou beber água com a minha mãe."],
-  eo: ["La infanoj manĝas pomojn en la domo.", "Hieraŭ mi iris al la lernejo kun miaj amikoj.", "Morgaŭ mi trinkos akvon kun mia patrino."],
-};
-
 const $ = (s) => document.querySelector(s);
 
 // settings are kept in the browser (never sent anywhere); the typed text is not stored
 const STORE = "bliss-settings";
-const STORE_UI = "bliss-ui";
 const readStore = (k) => {
   try {
     return localStorage.getItem(k);
@@ -162,10 +52,12 @@ const saved = (() => {
     return {};
   }
 })();
-const savedUi = readStore(STORE_UI);
 
 const state = {
-  ui: ["de", "en"].includes(savedUi) ? savedUi : "de", // starts in German unless the user chose otherwise
+  // the interface speaks the chosen language; "auto" (the default) means German
+  get ui() {
+    return this.lang === "auto" ? "de" : this.lang;
+  },
   lang: "auto",
   captions: true,
   skipArticles: false,
@@ -178,7 +70,6 @@ const state = {
 };
 const PAD = 16;
 const SIZES = [40, 48, 64, 80, 96, 128]; // the size slider moves in these steps
-const START_TEXT = "Der Hund beißt die Katze";
 const nearestSize = (v) => SIZES.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
 
 // ------------------------------------------------------------ analytics (optional)
@@ -196,7 +87,7 @@ const track = (name) => window.goatcounter?.count?.({ path: name, title: name, e
 function applyI18n() {
   const t = I18N[state.ui];
   document.documentElement.lang = state.ui;
-  document.title = state.ui === "de" ? "Bliss-Übersetzer · Text in Blissymbole umwandeln" : "Bliss Translator · Turn text into Blissymbols";
+  document.title = t.docTitle;
   for (const el of document.querySelectorAll("[data-i18n]")) {
     const v = t[el.dataset.i18n];
     if (typeof v === "string") el.textContent = v;
@@ -204,7 +95,6 @@ function applyI18n() {
   refreshPwaStatus();
   for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t[el.dataset.i18nHtml];
   for (const el of document.querySelectorAll("[data-i18n-ph]")) el.placeholder = t[el.dataset.i18nPh];
-  for (const b of document.querySelectorAll(".ui-lang button")) b.setAttribute("aria-pressed", String(b.dataset.ui === state.ui));
   applyLangLabels();
   applyChips();
   refreshShareLabel();
@@ -242,7 +132,7 @@ function applyLangLabels() {
   const auto = document.querySelector('#lang-seg [data-lang="auto"]');
   if (auto) auto.textContent = I18N[state.ui].langAuto;
   $("#lang-code").textContent = state.lang === "auto" ? I18N[state.ui].langAuto : state.lang.toUpperCase();
-  $("#lang-btn").setAttribute("aria-label", `${I18N[state.ui].textLang}: ${state.lang === "auto" ? I18N[state.ui].langAuto : NATIVE[state.lang]}`);
+  $("#lang-btn").setAttribute("aria-label", `${I18N[state.ui].langLabel}: ${state.lang === "auto" ? I18N[state.ui].langAuto : NATIVE[state.lang]}`);
   for (const b of document.querySelectorAll("#lang-seg button:not(.auto)")) b.textContent = NATIVE[b.dataset.lang];
 }
 
@@ -658,6 +548,10 @@ async function initPwa() {
 // ------------------------------------------------------------ wiring
 function setLang(l) {
   state.lang = l;
+  // an untouched start sentence follows the language
+  const box = $("#text");
+  if (Object.values(START).includes(box.value)) box.value = START[l === "auto" ? "de" : l];
+  applyI18n();
   for (const b of document.querySelectorAll("#lang-seg button")) b.setAttribute("aria-checked", String(b.dataset.lang === l));
   $("#lang-code").textContent = l === "auto" ? I18N[state.ui].langAuto : l.toUpperCase();
   applyChips();
@@ -689,13 +583,6 @@ async function init() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#lang-menu").hidden) (closeLangMenu(), $("#lang-btn").focus());
   });
-  for (const b of document.querySelectorAll(".ui-lang button"))
-    b.addEventListener("click", () => {
-      state.ui = b.dataset.ui;
-      writeStore(STORE_UI, state.ui);
-      applyI18n();
-      update();
-    });
   $("#btn-clear").addEventListener("click", () => {
     $("#text").value = "";
     state.choices = {};
@@ -741,7 +628,7 @@ async function init() {
     $("#out").innerHTML = `<p class="muted">${I18N[state.ui].loadError}</p>`;
     return;
   }
-  $("#text").value = hash.get("t") ?? START_TEXT;
+  $("#text").value = hash.get("t") ?? START[state.lang === "auto" ? "de" : state.lang];
   update();
   initPwa();
 }

@@ -1,5 +1,5 @@
 :root {
-  --build: "6af9f2f3";
+  --build: "6af9f483";
   --paper: #f6f3ec;
   --card: #fffdf8;
   --ink: #1d1a16;
@@ -107,9 +107,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .langs button[aria-checked="true"] { background: rgba(29, 26, 22, 0.08); }
 .langs button[aria-checked="true"]::after { content: "✓"; font-weight: 700; }
 .langs button.auto { color: var(--accent); }
-.ui-lang { display: flex; margin: 2px 2px 4px; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(29, 26, 22, 0.07); }
-.ui-lang button { flex: 1; border: 0; background: none; min-height: 34px; padding: 0 10px; border-radius: 999px; font: 700 13px var(--sans); color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s; }
-.ui-lang button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 
 /* ------------------------------------------------------------ options (collapsible) */
 .opts { margin-top: 12px; border-top: 1px solid var(--line); }
@@ -198,6 +195,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .alt small { display: block; color: var(--muted); }
 
 /* ------------------------------------------------------------ footer / about */
+.credit { margin: 18px 2px 0; text-align: center; font-size: 13px; color: var(--muted); }
 footer { max-width: 1120px; margin: 0 auto; padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(32px + var(--safe-b)) max(16px, env(safe-area-inset-left, 0px)); font-size: 13px; color: var(--muted); }
 .about { border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 253, 248, 0.6); padding: 0 16px; }
 .about summary { list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: 48px; font: 600 14px var(--sans); color: var(--ink); cursor: pointer; }

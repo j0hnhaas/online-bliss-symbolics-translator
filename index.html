@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta name="build" content="6af9f2f3">
+  <meta name="build" content="6af9f483">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bliss-Übersetzer · Text in Blissymbole umwandeln</title>
@@ -31,13 +31,8 @@
           <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
         </button>
         <div id="lang-menu" class="menu" hidden>
-          <div class="menu-h" data-i18n="textLang">Textsprache</div>
+          <div class="menu-h" data-i18n="langLabel">Sprache</div>
           <div class="langs" role="radiogroup" id="lang-seg" aria-labelledby="lang-btn"></div>
-          <div class="menu-h" data-i18n="uiLang">Oberfläche</div>
-          <div class="ui-lang" role="group">
-            <button type="button" data-ui="de">Deutsch</button>
-            <button type="button" data-ui="en">English</button>
-          </div>
         </div>
       </div>
     </div>
@@ -106,6 +101,7 @@
       </div>
       <p id="ios-hint" class="muted" hidden data-i18n="iosHint"></p>
     </details>
+    <p class="credit" data-i18n="credit">Idee &amp; Konzept: John Haas, Diplompsychologe · Umsetzung: Claude.ai</p>
   </footer>
 
   <script type="module" src="js/app.js"></script>
