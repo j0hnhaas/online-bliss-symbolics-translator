@@ -21,6 +21,12 @@ const I18N = {
     btnPrint: "Drucken",
     btnLink: "Link kopieren",
     linkCopied: "Link kopiert",
+    btnInstall: "App installieren",
+    btnOffline: "Alle Symbole offline laden (≈ 5 MB)",
+    offlineProgress: (n, total) => `Lade Symbole … ${n} / ${total}`,
+    offlineReady: "Offline bereit: alle Symbole sind gespeichert.",
+    offlineFail: "Das Laden wurde unterbrochen. Bereits geladene Symbole bleiben erhalten.",
+    iosHint: "Zum Installieren auf dem iPhone/iPad: Teilen-Symbol antippen und „Zum Home-Bildschirm“ wählen.",
     loading: "Lade Vokabular …",
     loadError: "Das Vokabular konnte nicht geladen werden. Bitte Seite neu laden.",
     hint: "Tipp: Auf ein Symbol klicken, um eine andere Bedeutung zu wählen.",
@@ -54,6 +60,12 @@ const I18N = {
     btnPrint: "Print",
     btnLink: "Copy link",
     linkCopied: "Link copied",
+    btnInstall: "Install app",
+    btnOffline: "Download all symbols for offline use (≈ 5 MB)",
+    offlineProgress: (n, total) => `Downloading symbols … ${n} / ${total}`,
+    offlineReady: "Ready offline: all symbols are stored.",
+    offlineFail: "Download interrupted. Symbols already loaded are kept.",
+    iosHint: "To install on iPhone/iPad: tap the Share icon and choose “Add to Home Screen”.",
     loading: "Loading vocabulary …",
     loadError: "Could not load the vocabulary. Please reload the page.",
     hint: "Tip: click a symbol to choose another meaning.",
@@ -111,6 +123,7 @@ function applyI18n() {
     const v = t[el.dataset.i18n];
     if (typeof v === "string") el.textContent = v;
   }
+  refreshPwaStatus();
   for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t[el.dataset.i18nHtml];
   for (const el of document.querySelectorAll("[data-i18n-ph]")) el.placeholder = t[el.dataset.i18nPh];
   for (const b of document.querySelectorAll(".ui-lang button")) b.setAttribute("aria-pressed", String(b.dataset.ui === state.ui));
@@ -363,6 +376,93 @@ function syncHash(now = false) {
   else hashTimer = setTimeout(run, 400);
 }
 
+// ------------------------------------------------------------ PWA: install + offline
+const SYMBOL_CACHE = "bliss-symbols-v1"; // must match sw.js
+let installEvent = null;
+let offlineState = { done: false, busy: false, n: 0, total: 0, failed: false };
+
+function refreshPwaStatus() {
+  const t = I18N[state.ui];
+  const el = $("#pwa-status");
+  if (!el) return;
+  if (offlineState.busy) el.textContent = t.offlineProgress(offlineState.n, offlineState.total);
+  else if (offlineState.failed) el.textContent = t.offlineFail;
+  else if (offlineState.done) el.textContent = t.offlineReady;
+  else el.textContent = "";
+}
+
+async function downloadAllSymbols() {
+  if (offlineState.busy || !("caches" in window) || !state.tr) return;
+  const ids = Object.keys(state.tr.S);
+  const cache = await caches.open(SYMBOL_CACHE);
+  offlineState = { done: false, busy: true, n: 0, total: ids.length, failed: false };
+  $("#btn-offline").disabled = true;
+  try {
+    const todo = [];
+    for (const id of ids) if (!(await cache.match(`symbols/${id}.svg`))) todo.push(id);
+    offlineState.n = ids.length - todo.length;
+    refreshPwaStatus();
+    for (let i = 0; i < todo.length; i += 24) {
+      await Promise.all(todo.slice(i, i + 24).map((id) => cache.add(`symbols/${id}.svg`)));
+      offlineState.n = Math.min(ids.length, ids.length - todo.length + i + 24);
+      refreshPwaStatus();
+    }
+    offlineState = { ...offlineState, busy: false, done: true, n: ids.length };
+    try {
+      localStorage.setItem("bliss-offline-all", "1");
+    } catch {}
+    navigator.storage?.persist?.();
+    track("offline-all");
+  } catch (err) {
+    console.error(err);
+    offlineState = { ...offlineState, busy: false, failed: true };
+    $("#btn-offline").disabled = false;
+  }
+  refreshPwaStatus();
+}
+
+async function initPwa() {
+  if (!("serviceWorker" in navigator) || !(location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return;
+  try {
+    await navigator.serviceWorker.register("sw.js");
+  } catch (err) {
+    console.warn("Service worker registration failed", err);
+    return;
+  }
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installEvent = e;
+    if (!standalone) $("#btn-install").hidden = false;
+  });
+  window.addEventListener("appinstalled", () => {
+    $("#btn-install").hidden = true;
+    installEvent = null;
+    track("app-installed");
+  });
+  $("#btn-install").addEventListener("click", async () => {
+    if (!installEvent) return;
+    installEvent.prompt();
+    await installEvent.userChoice;
+    installEvent = null;
+    $("#btn-install").hidden = true;
+  });
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone) $("#ios-hint").hidden = false;
+  $("#btn-offline").hidden = false;
+  $("#btn-offline").addEventListener("click", downloadAllSymbols);
+  try {
+    if (localStorage.getItem("bliss-offline-all")) {
+      // verify that the cache is still complete (the browser may have evicted it)
+      const cache = await caches.open(SYMBOL_CACHE);
+      if ((await cache.keys()).length >= 6000) {
+        offlineState.done = true;
+        $("#btn-offline").hidden = true;
+        refreshPwaStatus();
+      }
+    }
+  } catch {}
+}
+
 // ------------------------------------------------------------ wiring
 function setLang(l) {
   state.lang = l;
@@ -414,6 +514,7 @@ async function init() {
   }
   $("#text").value = hash.get("t") ?? EXAMPLES[state.ui][0];
   update();
+  initPwa();
 }
 
 init();

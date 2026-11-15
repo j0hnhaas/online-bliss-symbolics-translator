@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bliss-Übersetzer · Text in Blissymbole umwandeln</title>
   <meta name="description" content="Wandelt deutschen oder englischen Text in Blissymbole um. Läuft komplett im Browser, mit dem offiziellen BCI-Vokabular (CC BY-SA 4.0).">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M12 50 32 14l20 36z' fill='none' stroke='%23111' stroke-width='6' stroke-linejoin='round'/%3E%3Cpath d='M32 26v10' stroke='%23c4372b' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#f6f3ec">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bliss">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -66,6 +72,12 @@
     <p data-i18n-html="footerLicense"></p>
     <p data-i18n-html="footerNote"></p>
     <p id="privacy" class="muted" hidden data-i18n="privacy"></p>
+    <div class="pwa" id="pwa">
+      <button type="button" id="btn-install" hidden data-i18n="btnInstall">App installieren</button>
+      <button type="button" id="btn-offline" hidden data-i18n="btnOffline">Alle Symbole offline laden</button>
+      <span id="pwa-status" class="muted" role="status"></span>
+    </div>
+    <p id="ios-hint" class="muted" hidden data-i18n="iosHint"></p>
   </footer>
 
   <script type="module" src="js/app.js"></script>

@@ -113,6 +113,11 @@ footer { padding-top: 20px; padding-bottom: 40px; font-size: 13px; color: var(--
 footer p { margin: 0 0 6px; }
 footer a { color: var(--ink); }
 
+.pwa { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 0; }
+.pwa button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 7px 12px; font: 600 13px var(--sans); cursor: pointer; color: var(--ink); }
+.pwa button:hover { border-color: var(--ink); }
+.pwa button:disabled { opacity: 0.55; cursor: default; }
+
 @media (max-width: 640px) {
   .size { margin-left: 0; }
   .panel { padding: 14px; }
@@ -120,6 +125,7 @@ footer a { color: var(--ink); }
 
 @media print {
   body { background: #fff; }
+  .pwa, #ios-hint,
   .top, .panel:not(.output) > *, .out-head, .status, .hint, footer, .pop { display: none !important; }
   .panel, .canvas { border: 0; box-shadow: none; padding: 0; }
   .panel:not(.output) { display: none; }

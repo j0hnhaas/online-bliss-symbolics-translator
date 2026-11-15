@@ -14,6 +14,7 @@ Wandelt **deutschen oder englischen Text in Blissymbole** um. Alles läuft im Br
 - Abstände nach Regel 4.3.5 (Wortabstand, halber Abstand vor Satzzeichen)
 - Export als **PNG** und **SVG**, Drucken, Teilen per Link (`#t=…&l=de`)
 - Oberfläche auf Deutsch und Englisch
+- **PWA**: installierbar (Android/Desktop-Chrome/Edge, iOS über „Zum Home-Bildschirm“) und offline nutzbar; ein Button lädt auf Wunsch alle Symbole (≈ 5 MB) für den Offline-Betrieb
 - Optional: anonyme Besuchszählung mit [GoatCounter](https://www.goatcounter.com) (siehe unten)
 
 ## Aufbau
@@ -41,6 +42,10 @@ tests/              Tests (node --test)
 python3 -m http.server 8000   # dann http://localhost:8000
 npm test                      # Tests (Node ≥ 20)
 ```
+
+## PWA / Offline
+
+`sw.js` legt beim ersten Besuch die App-Dateien und das Wörterbuch in den Cache (Stale-while-revalidate: Änderungen kommen nach einem erneuten Laden an). Symbole werden beim ersten Anzeigen zwischengespeichert; der Button *Alle Symbole offline laden* holt alle 6551 auf einmal. Die Symbol-Caches heißen `bliss-symbols-v1`: **wenn sich `symbols/` ändert** (neues BCI-AV), den Namen in `sw.js` und in `js/app.js` (`SYMBOL_CACHE`) hochzählen. Der Service Worker läuft nur über HTTPS (GitHub Pages) oder `localhost`.
 
 ## GoatCounter einrichten
 
