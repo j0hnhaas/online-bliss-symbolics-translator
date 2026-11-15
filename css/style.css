@@ -57,9 +57,6 @@ h1 { margin: 0; font: 700 19px/1.15 var(--sans); letter-spacing: -0.01em; white-
 .ui-lang button { border: 0; background: none; min-width: 40px; min-height: 32px; padding: 0 10px; border-radius: 999px; font: 700 13px var(--sans); color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s; }
 .ui-lang button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 
-.pill-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px 0 11px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: 700 13px var(--sans); cursor: pointer; }
-.pill-btn[hidden] { display: none; }
-.pill-btn svg { width: 18px; height: 18px; }
 
 /* ------------------------------------------------------------ layout */
 main {
@@ -178,6 +175,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .actions button:active:not(:disabled) { transform: scale(0.96); }
 .actions button:disabled { opacity: 0.4; cursor: default; }
 .actions button[hidden] { display: none; }
+/* install: very bottom right on desktop (inside the tab bar on phones, see below) */
+#btn-install { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + var(--safe-b)); z-index: 30; background: var(--accent) !important; color: #fff; border-color: transparent !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22); }
 
 .canvas { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px; min-height: 96px; overflow-x: auto; }
 .canvas svg { display: block; max-width: none; }
@@ -274,6 +273,7 @@ footer { max-width: 1120px; margin: 0 auto; padding: 8px max(16px, env(safe-area
   .actions button:active:not(:disabled) { background: rgba(29, 26, 22, 0.08); transform: none; }
   /* while typing the keyboard needs the room */
   .typing .actions { display: none; }
+  #btn-install { position: static; box-shadow: none; background: none !important; color: var(--accent); }
   .typing { padding-bottom: 0; }
   .output .card-head { min-height: 0; }
 
@@ -292,8 +292,6 @@ footer { max-width: 1120px; margin: 0 auto; padding: 8px max(16px, env(safe-area
   }
   .pop::before { content: ""; display: block; width: 40px; height: 4px; margin: -8px auto 12px; border-radius: 2px; background: var(--line); }
   .pop h3 { margin-top: 2px; }
-  .pill-btn span { display: none; }
-  .pill-btn { padding: 0 10px; }
 }
 @media (max-width: 360px) {
   .tagline { display: none; }
@@ -302,7 +300,7 @@ footer { max-width: 1120px; margin: 0 auto; padding: 8px max(16px, env(safe-area
 /* installed app: no browser chrome, so give the bar a little more presence */
 @media (display-mode: standalone) {
   .appbar { background: rgba(246, 243, 236, 0.94); }
-  .pill-btn { display: none; }
+  #btn-install { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

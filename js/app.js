@@ -30,7 +30,8 @@ const I18N = {
     outputLabel: "Blissymbole",
     btnPng: "Bildexport",
     btnPrint: "Drucken",
-    btnLink: "Link teilen",
+    btnLinkApp: "App teilen",
+    btnLinkText: "Text teilen",
     linkCopied: "Link kopiert",
     btnInstall: "App installieren",
     btnOffline: "Alles offline laden (≈ 7 MB)",
@@ -72,7 +73,8 @@ const I18N = {
     outputLabel: "Blissymbols",
     btnPng: "Export image",
     btnPrint: "Print",
-    btnLink: "Share link",
+    btnLinkApp: "Share app",
+    btnLinkText: "Share text",
     linkCopied: "Link copied",
     btnInstall: "Install app",
     btnOffline: "Download everything for offline use (≈ 7 MB)",
@@ -134,18 +136,21 @@ const saved = (() => {
 const savedUi = readStore(STORE_UI);
 
 const state = {
-  ui: ["de", "en"].includes(savedUi) ? savedUi : (navigator.language || "de").toLowerCase().startsWith("de") ? "de" : "en",
+  ui: ["de", "en"].includes(savedUi) ? savedUi : "de", // starts in German unless the user chose otherwise
   lang: "auto",
   captions: true,
   skipArticles: false,
   grammar: false,
-  size: 64,
+  size: 48,
   choices: {},
   tr: null,
   result: null,
   lay: null,
 };
 const PAD = 16;
+const SIZES = [40, 48, 64, 80, 96, 128]; // the size slider moves in these steps
+const START_TEXT = "Der Hund beißt die Katze";
+const nearestSize = (v) => SIZES.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
 
 // ------------------------------------------------------------ analytics (optional)
 if (GOATCOUNTER) {
@@ -173,6 +178,7 @@ function applyI18n() {
   for (const b of document.querySelectorAll(".ui-lang button")) b.setAttribute("aria-pressed", String(b.dataset.ui === state.ui));
   applyLangLabels();
   applyChips();
+  refreshShareLabel();
 }
 
 /** The language switcher: Auto plus one pill per language, each under its own name. */
@@ -241,6 +247,7 @@ function autosize() {
 function render() {
   const out = $("#out");
   $("#btn-clear").hidden = !$("#text").value;
+  refreshShareLabel();
   autosize();
   const t = I18N[state.ui];
   if (!state.tr) return;
@@ -470,14 +477,24 @@ $("#btn-print").addEventListener("click", () => {
   window.print();
 });
 
-// "Share link": the system share sheet on touch devices, otherwise copy the link
+// "Share app" (empty box) / "Share text" (with text): system share sheet on touch devices, otherwise copy the link
+function refreshShareLabel() {
+  const t = I18N[state.ui];
+  $("#share-label").textContent = $("#text").value.trim() ? t.btnLinkText : t.btnLinkApp;
+}
 $("#btn-link").addEventListener("click", async () => {
-  syncHash(true);
-  const url = location.href;
+  const hasText = !!$("#text").value.trim();
+  let url;
+  if (hasText) {
+    syncHash(true);
+    url = location.href;
+  } else {
+    url = location.href.split("#")[0];
+  }
   if (navigator.share && matchMedia("(pointer: coarse)").matches) {
     try {
       await navigator.share({ title: I18N[state.ui].title, url });
-      track("share-link");
+      track(hasText ? "share-text" : "share-app");
       return;
     } catch (err) {
       if (err?.name === "AbortError") return;
@@ -485,10 +502,8 @@ $("#btn-link").addEventListener("click", async () => {
   }
   try {
     await navigator.clipboard.writeText(url);
-    const label = $("#btn-link span");
-    const old = label.textContent;
-    label.textContent = I18N[state.ui].linkCopied;
-    setTimeout(() => (label.textContent = old), 1500);
+    $("#share-label").textContent = I18N[state.ui].linkCopied;
+    setTimeout(refreshShareLabel, 1500);
   } catch {
     window.prompt("Link", url);
   }
@@ -615,15 +630,14 @@ async function init() {
   if (typeof saved.grammar === "boolean") state.grammar = saved.grammar;
   if (saved.lang === "auto" || CODES.includes(saved.lang)) state.lang = saved.lang;
   if (CODES.includes(hash.get("l"))) state.lang = hash.get("l"); // a shared link wins
-  if (saved.size >= 40 && saved.size <= 140) state.size = saved.size;
-  else if (window.innerWidth < 520) state.size = 48; // smaller default on phones
+  if (saved.size >= 40 && saved.size <= 140) state.size = nearestSize(saved.size);
   $("#opt-captions").checked = state.captions;
   $("#opt-articles").checked = state.skipArticles;
   $("#opt-grammar").checked = state.grammar;
   if (window.innerWidth < 720) $("#opts").open = false; // the result comes first on phones
   buildLangSeg();
   applyI18n();
-  $("#size").value = state.size;
+  $("#size").value = SIZES.indexOf(state.size);
   setLang(state.lang);
 
   for (const b of document.querySelectorAll(".ui-lang button"))
@@ -642,7 +656,8 @@ async function init() {
   $("#opt-captions").addEventListener("change", (e) => ((state.captions = e.target.checked), update()));
   $("#opt-articles").addEventListener("change", (e) => ((state.skipArticles = e.target.checked), update()));
   $("#opt-grammar").addEventListener("change", (e) => ((state.grammar = e.target.checked), update()));
-  $("#size").addEventListener("input", (e) => ((state.size = Number(e.target.value)), update()));
+  // applied on release only (change), so a stray touch while scrolling cannot resize everything
+  $("#size").addEventListener("change", (e) => ((state.size = SIZES[Number(e.target.value)] ?? 48), update()));
   $("#text").addEventListener("input", update);
   // hide the bottom tab bar only while the on-screen keyboard is really open
   let baseH = window.innerHeight;
@@ -677,7 +692,7 @@ async function init() {
     $("#out").innerHTML = `<p class="muted">${I18N[state.ui].loadError}</p>`;
     return;
   }
-  $("#text").value = hash.get("t") ?? EXAMPLES[state.lang === "auto" ? state.ui : state.lang][0];
+  $("#text").value = hash.get("t") ?? START_TEXT;
   update();
   initPwa();
 }

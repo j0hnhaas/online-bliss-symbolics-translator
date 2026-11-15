@@ -23,10 +23,6 @@
         <h1 data-i18n="title">Bliss-Übersetzer</h1>
         <p class="tagline" data-i18n="tagline">Zu Ehren des Werks von Charles K. Bliss</p>
       </div>
-      <button type="button" id="btn-install" class="pill-btn" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
-        <span data-i18n="btnInstall">App installieren</span>
-      </button>
       <div class="ui-lang" role="group" aria-label="Interface language">
         <button type="button" data-ui="de">DE</button>
         <button type="button" data-ui="en">EN</button>
@@ -59,7 +55,7 @@
       </div>
       <label class="size"><span data-i18n="optSize">Größe</span>
         <span class="size-a small" aria-hidden="true">A</span>
-        <input type="range" id="size" min="40" max="140" step="2" value="64">
+        <input type="range" id="size" min="0" max="5" step="1" value="1">
         <span class="size-a big" aria-hidden="true">A</span>
       </label>
 
@@ -74,9 +70,10 @@
       <div class="card-head">
         <h2 id="out-h" class="label" data-i18n="outputLabel">Blissymbole</h2>
         <div class="actions" role="toolbar">
-          <button type="button" id="btn-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/></svg><span data-i18n="btnLink">Link teilen</span></button>
+          <button type="button" id="btn-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/></svg><span id="share-label">App teilen</span></button>
           <button type="button" id="btn-png"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 5-4.5 3.5 3 2.5-2L20 17"/></svg><span data-i18n="btnPng">Bildexport</span></button>
           <button type="button" id="btn-print"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2"/><rect x="7" y="14" width="10" height="6" rx="1"/></svg><span data-i18n="btnPrint">Drucken</span></button>
+          <button type="button" id="btn-install" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg><span data-i18n="btnInstall">App installieren</span></button>
         </div>
       </div>
       <div id="out" class="canvas" aria-live="polite"><p class="muted" data-i18n="loading">Lade Vokabular …</p></div>
