@@ -135,7 +135,7 @@ export function layout(tr, tokens, { width, captions = true, lang = "de" }) {
         rx += c.gap;
         const dx = rx + (c.cw - c.w) / 2;
         for (const it of c.items) out.push({ ...it, x: it.x + dx, y: y + (it.y - minY) });
-        if (c.caption) {
+        if (captions && c.caption) {
           out.push({ t: "cap", x: rx + c.cw / 2, y: y + (maxY - minY) + CAP_FONT + 10, text: c.caption, badge: c.badge });
         }
         out.push({ t: "hit", x: rx - 4, y, w: c.cw + 8, h: maxY - minY + capH + 8, index: c.index, unknown: !!c.unknown });

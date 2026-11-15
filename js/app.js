@@ -30,6 +30,7 @@ const I18N = {
     outputLabel: "Blissymbole",
     btnPng: "PNG",
     btnSvg: "SVG",
+    btnShare: "Teilen",
     btnPrint: "Drucken",
     btnLink: "Link kopieren",
     linkCopied: "Link kopiert",
@@ -73,6 +74,7 @@ const I18N = {
     outputLabel: "Blissymbols",
     btnPng: "PNG",
     btnSvg: "SVG",
+    btnShare: "Share",
     btnPrint: "Print",
     btnLink: "Copy link",
     linkCopied: "Link copied",
@@ -110,8 +112,33 @@ const EXAMPLES = {
 };
 
 const $ = (s) => document.querySelector(s);
+
+// settings are kept in the browser (never sent anywhere); the typed text is not stored
+const STORE = "bliss-settings";
+const STORE_UI = "bliss-ui";
+const readStore = (k) => {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
+const writeStore = (k, v) => {
+  try {
+    localStorage.setItem(k, v);
+  } catch {}
+};
+const saved = (() => {
+  try {
+    return JSON.parse(readStore(STORE)) || {};
+  } catch {
+    return {};
+  }
+})();
+const savedUi = readStore(STORE_UI);
+
 const state = {
-  ui: (navigator.language || "de").toLowerCase().startsWith("de") ? "de" : "en",
+  ui: ["de", "en"].includes(savedUi) ? savedUi : (navigator.language || "de").toLowerCase().startsWith("de") ? "de" : "en",
   lang: "auto",
   captions: true,
   skipArticles: true,
@@ -205,11 +232,20 @@ function update() {
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(render);
   syncHash();
+  writeStore(STORE, JSON.stringify({ lang: state.lang, captions: state.captions, skipArticles: state.skipArticles, grammar: state.grammar, size: state.size }));
+}
+
+/** The text box grows with its content (up to ~40% of the screen). */
+function autosize() {
+  const ta = $("#text");
+  ta.style.height = "auto";
+  ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.round(window.innerHeight * 0.4))}px`;
 }
 
 function render() {
   const out = $("#out");
   $("#btn-clear").hidden = !$("#text").value;
+  autosize();
   const t = I18N[state.ui];
   if (!state.tr) return;
   const text = $("#text").value;
@@ -257,7 +293,7 @@ function render() {
 }
 
 function toggleActions(on) {
-  for (const id of ["#btn-png", "#btn-svg", "#btn-print"]) $(id).disabled = !on;
+  for (const id of ["#btn-png", "#btn-svg", "#btn-print", "#btn-share"]) $(id).disabled = !on;
 }
 
 const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -406,23 +442,53 @@ $("#btn-svg").addEventListener("click", async () => {
   track("export-svg");
 });
 
-$("#btn-png").addEventListener("click", async () => {
-  if (!state.lay) return;
+/** Render the current result to a PNG blob (white background). */
+async function renderPng() {
   const { svg, w, h } = await standaloneSvg(Math.max(1.5, (state.size / 128) * 2));
   const img = new Image();
-  img.onload = () => {
-    const c = document.createElement("canvas");
-    c.width = w;
-    c.height = h;
-    const ctx = c.getContext("2d");
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
-    c.toBlob((b) => download(b, "bliss.png"), "image/png");
-    track("export-png");
-  };
-  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return new Promise((resolve) => c.toBlob(resolve, "image/png"));
+}
+
+$("#btn-png").addEventListener("click", async () => {
+  if (!state.lay) return;
+  download(await renderPng(), "bliss.png");
+  track("export-png");
 });
+
+// system share sheet (phones): sends the picture straight to a messenger or mail app
+const canShareFiles = (() => {
+  try {
+    return !!navigator.canShare?.({ files: [new File(["x"], "bliss.png", { type: "image/png" })] });
+  } catch {
+    return false;
+  }
+})();
+if (canShareFiles) {
+  $("#btn-share").hidden = false;
+  document.body.classList.add("has-share");
+  $("#btn-share").addEventListener("click", async () => {
+    if (!state.lay) return;
+    const file = new File([await renderPng()], "bliss.png", { type: "image/png" });
+    try {
+      await navigator.share({ files: [file], title: I18N[state.ui].title });
+      track("share");
+    } catch (err) {
+      if (err?.name !== "AbortError") download(file, "bliss.png"); // fall back to a download
+    }
+  });
+}
 
 $("#btn-print").addEventListener("click", () => {
   track("print");
@@ -558,9 +624,16 @@ function setLang(l) {
 
 async function init() {
   const hash = new URLSearchParams(location.hash.slice(1));
-  if (CODES.includes(hash.get("l"))) state.lang = hash.get("l");
-
-  if (window.innerWidth < 520) state.size = 48; // smaller default on phones
+  if (typeof saved.captions === "boolean") state.captions = saved.captions;
+  if (typeof saved.skipArticles === "boolean") state.skipArticles = saved.skipArticles;
+  if (typeof saved.grammar === "boolean") state.grammar = saved.grammar;
+  if (saved.lang === "auto" || CODES.includes(saved.lang)) state.lang = saved.lang;
+  if (CODES.includes(hash.get("l"))) state.lang = hash.get("l"); // a shared link wins
+  if (saved.size >= 40 && saved.size <= 140) state.size = saved.size;
+  else if (window.innerWidth < 520) state.size = 48; // smaller default on phones
+  $("#opt-captions").checked = state.captions;
+  $("#opt-articles").checked = state.skipArticles;
+  $("#opt-grammar").checked = state.grammar;
   if (window.innerWidth < 720) $("#opts").open = false; // the result comes first on phones
   buildLangSeg();
   applyI18n();
@@ -570,6 +643,7 @@ async function init() {
   for (const b of document.querySelectorAll(".ui-lang button"))
     b.addEventListener("click", () => {
       state.ui = b.dataset.ui;
+      writeStore(STORE_UI, state.ui);
       applyI18n();
       update();
     });
@@ -584,6 +658,8 @@ async function init() {
   $("#opt-grammar").addEventListener("change", (e) => ((state.grammar = e.target.checked), update()));
   $("#size").addEventListener("input", (e) => ((state.size = Number(e.target.value)), update()));
   $("#text").addEventListener("input", update);
+  $("#text").addEventListener("focus", () => document.body.classList.add("typing"));
+  $("#text").addEventListener("blur", () => document.body.classList.remove("typing"));
   let lastW = 0;
   new ResizeObserver(() => {
     const w = $("#out").clientWidth;
