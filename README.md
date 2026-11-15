@@ -12,7 +12,7 @@ Wandelt **Text in Blissymbole** um: Deutsch, Englisch, Französisch, Spanisch, I
 - Hilfsverben und Zeitformen werden zu Zeit-Indikatoren: *werde … gehen*, *habe … gesehen*, *will go*, *j'ai vu*, *vais manger*, *ha comido*, *voy a beber*, *berremo*, *tenho comido*, *trinkos*, *manĝinta*
 - Klick auf ein Symbol zeigt alternative Bedeutungen (Mehrdeutigkeiten wie *gehen*, *essen*, *sein*)
 - Abstände nach Regel 4.3.5 (Wortabstand, halber Abstand vor Satzzeichen)
-- Export als **PNG** und **SVG**, Drucken, Teilen per Link (`#t=…&l=de`)
+- Bildexport (PNG), Drucken, Link teilen (`#t=…&l=de`; auf dem Handy über das System-Teilen-Menü)
 - Oberfläche auf Deutsch und Englisch
 - **PWA**: installierbar (Android/Desktop-Chrome/Edge, iOS über „Zum Home-Bildschirm“) und offline nutzbar; ein Button lädt auf Wunsch alle Symbole und Sprachen (≈ 7 MB) für den Offline-Betrieb
 - Optional: anonyme Besuchszählung mit [GoatCounter](https://www.goatcounter.com) (siehe unten)
@@ -54,7 +54,7 @@ npm test                      # Tests (Node ≥ 20)
 2. In `js/config.js` den Site-Code eintragen: `export const GOATCOUNTER = "bliss-translator";`
 3. Committen und pushen. Solange der Code leer ist, wird nichts geladen und nichts gezählt.
 
-Gezählt werden Seitenaufrufe sowie die Ereignisse *export-png*, *export-svg*, *print*, *copy-link* und *choose-alternative*. Der eingegebene Text wird **nicht** übertragen. Ein Hinweis im Seitenfuß erscheint automatisch, sobald GoatCounter aktiv ist.
+Gezählt werden Seitenaufrufe sowie die Ereignisse *export-png*, *print*, *share-link*, *copy-link* und *choose-alternative*. Der eingegebene Text wird **nicht** übertragen. Ein Hinweis im Seitenfuß erscheint automatisch, sobald GoatCounter aktiv ist.
 
 ## Vokabular neu erzeugen
 
@@ -75,6 +75,6 @@ Die Zuordnung erfolgt **wortweise**. Das ist eine Lesehilfe und keine vollständ
 ## Lizenz
 
 - **Programmcode** (`js/`, `css/`, `tools/`, `tests/`, `index.html`, `data/overrides.json`): MIT, siehe [LICENSE](LICENSE).
-- **Blissymbole und Vokabular** (`symbols/`, `data/symbols.json`, `data/lang/`): © Blissymbolics Communication International (BCI), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Weitergabe nur mit Namensnennung und unter derselben Lizenz, siehe [LICENSE-DATA.md](LICENSE-DATA.md). Exportierte SVG-Dateien enthalten den Hinweis.
+- **Blissymbole und Vokabular** (`symbols/`, `data/symbols.json`, `data/lang/`): © Blissymbolics Communication International (BCI), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Weitergabe nur mit Namensnennung und unter derselben Lizenz, siehe [LICENSE-DATA.md](LICENSE-DATA.md). Das exportierte PNG trägt eine kleine Quellenzeile unter den Symbolen.
 
 Dies ist kein offizielles Produkt von BCI.

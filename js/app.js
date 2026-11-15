@@ -28,11 +28,9 @@ const I18N = {
     optSize: "Größe",
     examples: "Beispiele",
     outputLabel: "Blissymbole",
-    btnPng: "PNG",
-    btnSvg: "SVG",
-    btnShare: "Teilen",
+    btnPng: "Bildexport",
     btnPrint: "Drucken",
-    btnLink: "Link kopieren",
+    btnLink: "Link teilen",
     linkCopied: "Link kopiert",
     btnInstall: "App installieren",
     btnOffline: "Alles offline laden (≈ 7 MB)",
@@ -72,11 +70,9 @@ const I18N = {
     optSize: "Size",
     examples: "Examples",
     outputLabel: "Blissymbols",
-    btnPng: "PNG",
-    btnSvg: "SVG",
-    btnShare: "Share",
+    btnPng: "Export image",
     btnPrint: "Print",
-    btnLink: "Copy link",
+    btnLink: "Share link",
     linkCopied: "Link copied",
     btnInstall: "Install app",
     btnOffline: "Download everything for offline use (≈ 7 MB)",
@@ -141,8 +137,8 @@ const state = {
   ui: ["de", "en"].includes(savedUi) ? savedUi : (navigator.language || "de").toLowerCase().startsWith("de") ? "de" : "en",
   lang: "auto",
   captions: true,
-  skipArticles: true,
-  grammar: true,
+  skipArticles: false,
+  grammar: false,
   size: 64,
   choices: {},
   tr: null,
@@ -293,7 +289,7 @@ function render() {
 }
 
 function toggleActions(on) {
-  for (const id of ["#btn-png", "#btn-svg", "#btn-print", "#btn-share"]) $(id).disabled = !on;
+  for (const id of ["#btn-png", "#btn-print"]) $(id).disabled = !on;
 }
 
 const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -435,29 +431,31 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
-$("#btn-svg").addEventListener("click", async () => {
-  if (!state.lay) return;
-  const { svg } = await standaloneSvg(state.size / 128);
-  download(new Blob([svg], { type: "image/svg+xml" }), "bliss.svg");
-  track("export-svg");
-});
-
 /** Render the current result to a PNG blob (white background). */
 async function renderPng() {
-  const { svg, w, h } = await standaloneSvg(Math.max(1.5, (state.size / 128) * 2));
+  const scale = Math.max(1.5, (state.size / 128) * 2);
+  const { svg, w, h } = await standaloneSvg(scale);
   const img = new Image();
   await new Promise((resolve, reject) => {
     img.onload = resolve;
     img.onerror = reject;
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   });
+  // a small credit line (CC BY-SA 4.0 attribution) under the symbols
+  const fs = Math.round(7 * scale);
+  const band = Math.round(fs * 2.2);
   const c = document.createElement("canvas");
   c.width = w;
-  c.height = h;
+  c.height = h + band;
   const ctx = c.getContext("2d");
   ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, w, h + band);
   ctx.drawImage(img, 0, 0, w, h);
+  ctx.fillStyle = "#8a8478";
+  ctx.font = `${fs}px system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Blissymbols © BCI · CC BY-SA 4.0 · blissymbolics.org", w - fs, h + band / 2);
   return new Promise((resolve) => c.toBlob(resolve, "image/png"));
 }
 
@@ -467,44 +465,32 @@ $("#btn-png").addEventListener("click", async () => {
   track("export-png");
 });
 
-// system share sheet (phones): sends the picture straight to a messenger or mail app
-const canShareFiles = (() => {
-  try {
-    return !!navigator.canShare?.({ files: [new File(["x"], "bliss.png", { type: "image/png" })] });
-  } catch {
-    return false;
-  }
-})();
-if (canShareFiles) {
-  $("#btn-share").hidden = false;
-  document.body.classList.add("has-share");
-  $("#btn-share").addEventListener("click", async () => {
-    if (!state.lay) return;
-    const file = new File([await renderPng()], "bliss.png", { type: "image/png" });
-    try {
-      await navigator.share({ files: [file], title: I18N[state.ui].title });
-      track("share");
-    } catch (err) {
-      if (err?.name !== "AbortError") download(file, "bliss.png"); // fall back to a download
-    }
-  });
-}
-
 $("#btn-print").addEventListener("click", () => {
   track("print");
   window.print();
 });
 
+// "Share link": the system share sheet on touch devices, otherwise copy the link
 $("#btn-link").addEventListener("click", async () => {
   syncHash(true);
+  const url = location.href;
+  if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+    try {
+      await navigator.share({ title: I18N[state.ui].title, url });
+      track("share-link");
+      return;
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+  }
   try {
-    await navigator.clipboard.writeText(location.href);
+    await navigator.clipboard.writeText(url);
     const label = $("#btn-link span");
     const old = label.textContent;
     label.textContent = I18N[state.ui].linkCopied;
     setTimeout(() => (label.textContent = old), 1500);
   } catch {
-    window.prompt("Link", location.href);
+    window.prompt("Link", url);
   }
   track("copy-link");
 });
@@ -658,8 +644,18 @@ async function init() {
   $("#opt-grammar").addEventListener("change", (e) => ((state.grammar = e.target.checked), update()));
   $("#size").addEventListener("input", (e) => ((state.size = Number(e.target.value)), update()));
   $("#text").addEventListener("input", update);
-  $("#text").addEventListener("focus", () => document.body.classList.add("typing"));
-  $("#text").addEventListener("blur", () => document.body.classList.remove("typing"));
+  // hide the bottom tab bar only while the on-screen keyboard is really open
+  let baseH = window.innerHeight;
+  const syncKeyboard = () => {
+    const h = window.visualViewport?.height ?? window.innerHeight;
+    if (h > baseH) baseH = h;
+    document.body.classList.toggle("typing", document.activeElement === $("#text") && h < baseH * 0.8);
+  };
+  window.visualViewport?.addEventListener("resize", syncKeyboard);
+  window.addEventListener("resize", syncKeyboard);
+  window.addEventListener("orientationchange", () => setTimeout(() => ((baseH = window.innerHeight), syncKeyboard()), 400));
+  $("#text").addEventListener("focus", () => setTimeout(syncKeyboard, 300));
+  $("#text").addEventListener("blur", syncKeyboard);
   let lastW = 0;
   new ResizeObserver(() => {
     const w = $("#out").clientWidth;
