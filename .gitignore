@@ -3,3 +3,5 @@ node_modules/
 *.log
 # raw BCI-AV downloads used by tools/build.py (get them from blissymbolics.org)
 /source/
+__pycache__/
+*.pyc
