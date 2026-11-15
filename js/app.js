@@ -3,6 +3,31 @@ import { CODES } from "./langs/index.js";
 import { layout, toSvg } from "./layout.js";
 import { GOATCOUNTER, REPO_URL } from "./config.js";
 
+// index.html, style.css and app.js must be the same build (see tools/stamp.py). A CDN or browser
+// cache can serve a mix right after a deploy; then drop the shell caches and reload once.
+const BUILD = "6af9f2f3";
+function checkBuild() {
+  const html = document.querySelector('meta[name="build"]')?.content;
+  const css = getComputedStyle(document.documentElement).getPropertyValue("--build").replace(/["'\s]/g, "");
+  try {
+    if (html === BUILD && css === BUILD) return sessionStorage.removeItem("bliss-heal");
+    if (sessionStorage.getItem("bliss-heal")) return; // already tried once, avoid a reload loop
+    sessionStorage.setItem("bliss-heal", "1");
+  } catch {
+    return;
+  }
+  (async () => {
+    try {
+      for (const k of await caches.keys()) if (k.startsWith("bliss-shell-")) await caches.delete(k);
+      await Promise.all(["./", "css/style.css", import.meta.url].map((u) => fetch(u, { cache: "reload" }).catch(() => {})));
+    } finally {
+      location.reload();
+    }
+  })();
+}
+if (document.readyState === "complete") checkBuild();
+else addEventListener("load", checkBuild, { once: true });
+
 const LANG_NAMES = {
   de: { de: "Deutsch", en: "Englisch", fr: "Französisch", es: "Spanisch", it: "Italienisch", pt: "Portugiesisch", eo: "Esperanto" },
   en: { de: "German", en: "English", fr: "French", es: "Spanish", it: "Italian", pt: "Portuguese", eo: "Esperanto" },

@@ -78,3 +78,7 @@ Die Zuordnung erfolgt **wortweise**. Das ist eine Lesehilfe und keine vollständ
 - **Blissymbole und Vokabular** (`symbols/`, `data/symbols.json`, `data/lang/`): © Blissymbolics Communication International (BCI), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Weitergabe nur mit Namensnennung und unter derselben Lizenz, siehe [LICENSE-DATA.md](LICENSE-DATA.md). Das exportierte PNG trägt eine kleine Quellenzeile unter den Symbolen.
 
 Dies ist kein offizielles Produkt von BCI.
+
+## Releasing
+
+Run `python3 tools/stamp.py` before committing changes to `index.html`, `css/style.css` or `js/app.js`. It writes the same build id into all three; the app checks that they match and reloads once if a cache served a mix after a deploy.
