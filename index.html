@@ -2,9 +2,9 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bliss-Übersetzer · Text in Blissymbole umwandeln</title>
-  <meta name="description" content="Wandelt deutschen oder englischen Text in Blissymbole um. Läuft komplett im Browser, mit dem offiziellen BCI-Vokabular (CC BY-SA 4.0).">
+  <meta name="description" content="Wandelt Text in Blissymbole um: Deutsch, Englisch, Französisch, Spanisch, Italienisch, Portugiesisch und Esperanto. Läuft komplett im Browser, mit dem offiziellen BCI-Vokabular (CC BY-SA 4.0).">
   <meta name="theme-color" content="#f6f3ec">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -12,55 +12,72 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Bliss">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="top">
-    <div class="brand">
-      <h1 data-i18n="title">Bliss-Übersetzer</h1>
-      <p class="tagline" data-i18n="tagline">Deutschen oder englischen Text in Blissymbole umwandeln</p>
-    </div>
-    <div class="ui-lang" role="group" aria-label="Interface language">
-      <button type="button" data-ui="de">DE</button>
-      <button type="button" data-ui="en">EN</button>
+  <header class="appbar">
+    <div class="appbar-in">
+      <img class="logo" src="icons/icon.svg" width="36" height="36" alt="">
+      <div class="brand">
+        <h1 data-i18n="title">Bliss-Übersetzer</h1>
+        <p class="tagline" data-i18n="tagline">Zu Ehren des Werks von Charles K. Bliss</p>
+      </div>
+      <button type="button" id="btn-install" class="pill-btn" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
+        <span data-i18n="btnInstall">App installieren</span>
+      </button>
+      <div class="ui-lang" role="group" aria-label="Interface language">
+        <button type="button" data-ui="de">DE</button>
+        <button type="button" data-ui="en">EN</button>
+      </div>
     </div>
   </header>
 
   <main>
-    <section class="panel" aria-labelledby="in-h">
+    <section class="card input" aria-labelledby="in-h">
       <h2 id="in-h" class="sr-only" data-i18n="inputHeading">Eingabe</h2>
-      <label for="text" class="label" data-i18n="inputLabel">Dein Text</label>
+
+      <div class="card-head">
+        <label for="text" class="label" data-i18n="inputLabel">Dein Text</label>
+        <button type="button" id="btn-clear" class="icon-btn" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <span class="sr-only" data-i18n="btnClear">Text löschen</span>
+        </button>
+      </div>
       <textarea id="text" rows="4" spellcheck="false" autocomplete="off" data-i18n-ph="placeholder" placeholder="Schreibe hier einen Text …"></textarea>
 
-      <div class="controls">
-        <div class="seg" role="radiogroup" aria-label="Sprache des Textes" id="lang-seg">
-          <button type="button" role="radio" data-lang="auto" aria-checked="true" data-i18n="langAuto">Auto</button>
-          <button type="button" role="radio" data-lang="de" aria-checked="false">Deutsch</button>
-          <button type="button" role="radio" data-lang="en" aria-checked="false">English</button>
-        </div>
-        <label class="more-lang"><span class="sr-only" data-i18n="moreLangs">Weitere Sprachen</span>
-          <select id="lang-more"></select>
-        </label>
-        <label class="check"><input type="checkbox" id="opt-captions" checked> <span data-i18n="optCaptions">Wörter darunter</span></label>
-        <label class="check"><input type="checkbox" id="opt-articles" checked> <span data-i18n="optArticles">Artikel weglassen</span></label>
-        <label class="check"><input type="checkbox" id="opt-grammar" checked> <span data-i18n="optGrammar">Zeit &amp; Plural</span></label>
-        <label class="size"><span data-i18n="optSize">Größe</span> <input type="range" id="size" min="40" max="140" step="2" value="64"></label>
+      <div class="label small" data-i18n="langLabel">Sprache</div>
+      <div class="langs" role="radiogroup" aria-label="Sprache des Textes" id="lang-seg"></div>
+
+      <details class="opts" id="opts" open>
+        <summary data-i18n="options">Optionen &amp; Beispiele</summary>
+      <div class="toggles">
+        <label class="tog"><input type="checkbox" id="opt-captions" checked><span data-i18n="optCaptions">Wörter darunter</span></label>
+        <label class="tog"><input type="checkbox" id="opt-articles" checked><span data-i18n="optArticles">Artikel weglassen</span></label>
+        <label class="tog"><input type="checkbox" id="opt-grammar" checked><span data-i18n="optGrammar">Zeit &amp; Plural</span></label>
       </div>
+      <label class="size"><span data-i18n="optSize">Größe</span>
+        <span class="size-a small" aria-hidden="true">A</span>
+        <input type="range" id="size" min="40" max="140" step="2" value="64">
+        <span class="size-a big" aria-hidden="true">A</span>
+      </label>
 
       <div class="examples">
-        <span class="label small" data-i18n="examples">Beispiele</span>
-        <span id="example-chips"></span>
+        <div class="label small" data-i18n="examples">Beispiele</div>
+        <div id="example-chips" class="chips"></div>
       </div>
+      </details>
     </section>
 
-    <section class="panel output" aria-labelledby="out-h">
-      <div class="out-head">
+    <section class="card output" aria-labelledby="out-h">
+      <div class="card-head">
         <h2 id="out-h" class="label" data-i18n="outputLabel">Blissymbole</h2>
-        <div class="actions">
-          <button type="button" id="btn-png" data-i18n="btnPng">PNG</button>
-          <button type="button" id="btn-svg" data-i18n="btnSvg">SVG</button>
-          <button type="button" id="btn-print" data-i18n="btnPrint">Drucken</button>
-          <button type="button" id="btn-link" data-i18n="btnLink">Link kopieren</button>
+        <div class="actions" role="toolbar">
+          <button type="button" id="btn-png"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 5-4.5 3.5 3 2.5-2L20 17"/></svg><span data-i18n="btnPng">PNG</span></button>
+          <button type="button" id="btn-svg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.5 8-4 4 4 4m7-8 4 4-4 4M13.5 6l-3 12"/></svg><span data-i18n="btnSvg">SVG</span></button>
+          <button type="button" id="btn-print"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2"/><rect x="7" y="14" width="10" height="6" rx="1"/></svg><span data-i18n="btnPrint">Drucken</span></button>
+          <button type="button" id="btn-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span data-i18n="btnLink">Link kopieren</span></button>
         </div>
       </div>
       <div id="out" class="canvas" aria-live="polite"><p class="muted" data-i18n="loading">Lade Vokabular …</p></div>
@@ -72,15 +89,17 @@
   <div id="pop" class="pop" role="dialog" aria-modal="false" hidden></div>
 
   <footer>
-    <p data-i18n-html="footerLicense"></p>
-    <p data-i18n-html="footerNote"></p>
-    <p id="privacy" class="muted" hidden data-i18n="privacy"></p>
-    <div class="pwa" id="pwa">
-      <button type="button" id="btn-install" hidden data-i18n="btnInstall">App installieren</button>
-      <button type="button" id="btn-offline" hidden data-i18n="btnOffline">Alle Symbole offline laden</button>
-      <span id="pwa-status" class="muted" role="status"></span>
-    </div>
-    <p id="ios-hint" class="muted" hidden data-i18n="iosHint"></p>
+    <details class="about">
+      <summary data-i18n="about">Info &amp; Lizenz</summary>
+      <p data-i18n-html="footerLicense"></p>
+      <p data-i18n-html="footerNote"></p>
+      <p id="privacy" class="muted" hidden data-i18n="privacy"></p>
+      <div class="pwa" id="pwa">
+        <button type="button" id="btn-offline" hidden data-i18n="btnOffline">Alle Symbole offline laden</button>
+        <span id="pwa-status" class="muted" role="status"></span>
+      </div>
+      <p id="ios-hint" class="muted" hidden data-i18n="iosHint"></p>
+    </details>
   </footer>
 
   <script type="module" src="js/app.js"></script>

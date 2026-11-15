@@ -7,20 +7,21 @@ const LANG_NAMES = {
   de: { de: "Deutsch", en: "Englisch", fr: "Französisch", es: "Spanisch", it: "Italienisch", pt: "Portugiesisch", eo: "Esperanto" },
   en: { de: "German", en: "English", fr: "French", es: "Spanish", it: "Italian", pt: "Portuguese", eo: "Esperanto" },
 };
-// the extra languages in the drop-down, with their own names
-const MORE_LANGS = ["fr", "es", "it", "pt", "eo"];
-const NATIVE = { fr: "Français", es: "Español", it: "Italiano", pt: "Português", eo: "Esperanto" };
+// each language under its own name, as shown in the switcher
+const NATIVE = { de: "Deutsch", en: "English", fr: "Français", es: "Español", it: "Italiano", pt: "Português", eo: "Esperanto" };
 
 const I18N = {
   de: {
     title: "Bliss-Übersetzer",
-    tagline: "Text in Blissymbole umwandeln: Deutsch, Englisch, Französisch, Spanisch, Italienisch, Portugiesisch und Esperanto",
+    tagline: "Zu Ehren des Werks von Charles K. Bliss",
     inputHeading: "Eingabe",
     inputLabel: "Dein Text",
     placeholder: "Schreibe hier einen Text …",
     langAuto: "Auto",
-    moreLangs: "Weitere Sprachen",
-    moreLangsOption: "Weitere …",
+    langLabel: "Sprache",
+    options: "Optionen & Beispiele",
+    btnClear: "Text löschen",
+    about: "Info & Lizenz",
     optCaptions: "Wörter darunter",
     optArticles: "Artikel weglassen",
     optGrammar: "Zeit & Plural",
@@ -55,13 +56,15 @@ const I18N = {
   },
   en: {
     title: "Bliss Translator",
-    tagline: "Turn text into Blissymbols: German, English, French, Spanish, Italian, Portuguese and Esperanto",
+    tagline: "To honor the work of Charles K. Bliss",
     inputHeading: "Input",
     inputLabel: "Your text",
     placeholder: "Type some text here …",
     langAuto: "Auto",
-    moreLangs: "More languages",
-    moreLangsOption: "More …",
+    langLabel: "Language",
+    options: "Options & examples",
+    btnClear: "Clear text",
+    about: "About & licence",
     optCaptions: "Words underneath",
     optArticles: "Skip articles",
     optGrammar: "Tense & plural",
@@ -145,20 +148,31 @@ function applyI18n() {
   for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t[el.dataset.i18nHtml];
   for (const el of document.querySelectorAll("[data-i18n-ph]")) el.placeholder = t[el.dataset.i18nPh];
   for (const b of document.querySelectorAll(".ui-lang button")) b.setAttribute("aria-pressed", String(b.dataset.ui === state.ui));
-  fillMoreLangs();
+  applyLangLabels();
   applyChips();
 }
 
-function fillMoreLangs() {
-  const more = $("#lang-more");
-  const cur = more.value;
-  more.textContent = "";
-  const first = document.createElement("option");
-  first.value = "";
-  first.textContent = I18N[state.ui].moreLangsOption;
-  more.appendChild(first);
-  for (const c of MORE_LANGS) more.add(new Option(NATIVE[c], c));
-  more.value = cur;
+/** The language switcher: Auto plus one pill per language, each under its own name. */
+function buildLangSeg() {
+  const seg = $("#lang-seg");
+  for (const code of ["auto", ...CODES]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("role", "radio");
+    b.dataset.lang = code;
+    b.setAttribute("aria-checked", "false");
+    if (code === "auto") b.className = "auto";
+    else b.lang = code;
+    b.addEventListener("click", () => setLang(code));
+    seg.appendChild(b);
+  }
+  applyLangLabels();
+}
+
+function applyLangLabels() {
+  const auto = document.querySelector('#lang-seg [data-lang="auto"]');
+  if (auto) auto.textContent = I18N[state.ui].langAuto;
+  for (const b of document.querySelectorAll("#lang-seg button:not(.auto)")) b.textContent = NATIVE[b.dataset.lang];
 }
 
 function applyChips() {
@@ -195,6 +209,7 @@ function update() {
 
 function render() {
   const out = $("#out");
+  $("#btn-clear").hidden = !$("#text").value;
   const t = I18N[state.ui];
   if (!state.tr) return;
   const text = $("#text").value;
@@ -418,10 +433,10 @@ $("#btn-link").addEventListener("click", async () => {
   syncHash(true);
   try {
     await navigator.clipboard.writeText(location.href);
-    const b = $("#btn-link");
-    const old = b.textContent;
-    b.textContent = I18N[state.ui].linkCopied;
-    setTimeout(() => (b.textContent = old), 1500);
+    const label = $("#btn-link span");
+    const old = label.textContent;
+    label.textContent = I18N[state.ui].linkCopied;
+    setTimeout(() => (label.textContent = old), 1500);
   } catch {
     window.prompt("Link", location.href);
   }
@@ -535,9 +550,7 @@ async function initPwa() {
 function setLang(l) {
   state.lang = l;
   for (const b of document.querySelectorAll("#lang-seg button")) b.setAttribute("aria-checked", String(b.dataset.lang === l));
-  const more = $("#lang-more");
-  more.value = MORE_LANGS.includes(l) ? l : "";
-  more.classList.toggle("active", MORE_LANGS.includes(l));
+  document.querySelector(`#lang-seg [data-lang="${l}"]`)?.scrollIntoView({ inline: "center", block: "nearest" });
   applyChips();
   state.choices = {};
   update();
@@ -548,6 +561,8 @@ async function init() {
   if (CODES.includes(hash.get("l"))) state.lang = hash.get("l");
 
   if (window.innerWidth < 520) state.size = 48; // smaller default on phones
+  if (window.innerWidth < 720) $("#opts").open = false; // the result comes first on phones
+  buildLangSeg();
   applyI18n();
   $("#size").value = state.size;
   setLang(state.lang);
@@ -558,8 +573,12 @@ async function init() {
       applyI18n();
       update();
     });
-  for (const b of document.querySelectorAll("#lang-seg button")) b.addEventListener("click", () => setLang(b.dataset.lang));
-  $("#lang-more").addEventListener("change", (e) => e.target.value && setLang(e.target.value));
+  $("#btn-clear").addEventListener("click", () => {
+    $("#text").value = "";
+    state.choices = {};
+    $("#text").focus();
+    update();
+  });
   $("#opt-captions").addEventListener("change", (e) => ((state.captions = e.target.checked), update()));
   $("#opt-articles").addEventListener("change", (e) => ((state.skipArticles = e.target.checked), update()));
   $("#opt-grammar").addEventListener("change", (e) => ((state.grammar = e.target.checked), update()));

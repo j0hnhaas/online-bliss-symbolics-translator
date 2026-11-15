@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Bliss-Übersetzer",
   "short_name": "Bliss",
-  "description": "Deutschen oder englischen Text in Blissymbole umwandeln – auch offline.",
+  "description": "Text in Blissymbole umwandeln – auch offline. Zu Ehren des Werks von Charles K. Bliss.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",
