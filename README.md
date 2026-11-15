@@ -46,7 +46,7 @@ npm test                      # Tests (Node ≥ 20)
 
 ## PWA / Offline
 
-`sw.js` legt beim ersten Besuch die App-Dateien und die Wörterbücher für Deutsch und Englisch in den Cache; weitere Sprachen folgen, sobald sie zum ersten Mal benutzt werden (Stale-while-revalidate: Änderungen kommen nach einem erneuten Laden an). Symbole werden beim ersten Anzeigen zwischengespeichert; der Button *Alle Symbole offline laden* holt alle 6551 auf einmal und lädt dabei alle Sprachen. Der App-Cache heißt `bliss-shell-v2` (bei Änderungen an der Dateiliste in `sw.js` hochzählen). Die Symbol-Caches heißen `bliss-symbols-v1`: **wenn sich `symbols/` ändert** (neues BCI-AV), den Namen in `sw.js` und in `js/app.js` (`SYMBOL_CACHE`) hochzählen. Der Service Worker läuft nur über HTTPS (GitHub Pages) oder `localhost`.
+`sw.js` legt beim ersten Besuch die App-Dateien und die Wörterbücher für Deutsch und Englisch in den Cache; weitere Sprachen folgen, sobald sie zum ersten Mal benutzt werden (Netzwerk zuerst und immer neu geprüft, der Cache springt nur offline oder bei sehr langsamer Verbindung ein, damit nie Dateien verschiedener Versionen gemischt werden). Symbole werden beim ersten Anzeigen zwischengespeichert; der Button *Alle Symbole offline laden* holt alle 6551 auf einmal und lädt dabei alle Sprachen. Der App-Cache heißt `bliss-shell-v3` (bei Änderungen an der Dateiliste in `sw.js` hochzählen). Die Symbol-Caches heißen `bliss-symbols-v1`: **wenn sich `symbols/` ändert** (neues BCI-AV), den Namen in `sw.js` und in `js/app.js` (`SYMBOL_CACHE`) hochzählen. Der Service Worker läuft nur über HTTPS (GitHub Pages) oder `localhost`.
 
 ## GoatCounter einrichten
 

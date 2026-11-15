@@ -1,11 +1,13 @@
 // Service worker: makes the translator work offline.
 //
-// * App shell (HTML/CSS/JS/data of German and English) is precached on install and refreshed in the
-//   background on every visit; the other language files are cached when first used (stale-while-revalidate), so updates arrive after one reload.
+// * App shell (HTML/CSS/JS/data of German and English) is precached on install. Afterwards every
+//   shell file is fetched network-first, revalidated with the server (cache: "no-cache"), and the
+//   cached copy is only used offline or when the network is very slow. This keeps HTML, scripts and
+//   data from different releases from ever being mixed (which would break the app after a deploy).
 // * Symbol SVGs are cached the first time they are shown (cache-first). The page can also
 //   download all of them on request ("Offline-Modus"). Their cache is separate and only
 //   needs a new name when the BCI-AV data changes.
-const SHELL = "bliss-shell-v2";
+const SHELL = "bliss-shell-v3";
 const SYMBOLS = "bliss-symbols-v1";
 
 const SHELL_FILES = [
@@ -36,7 +38,7 @@ const SHELL_FILES = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES.map((f) => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -62,9 +64,9 @@ self.addEventListener("fetch", (event) => {
   if (path.startsWith("symbols/")) {
     event.respondWith(cacheFirst(req, SYMBOLS));
   } else if (req.mode === "navigate") {
-    event.respondWith(networkFirstPage(req));
+    event.respondWith(networkFirst(req, "index.html"));
   } else {
-    event.respondWith(staleWhileRevalidate(req, SHELL));
+    event.respondWith(networkFirst(req, req.url));
   }
 });
 
@@ -77,25 +79,17 @@ async function cacheFirst(req, name) {
   return res;
 }
 
-async function staleWhileRevalidate(req, name) {
-  const cache = await caches.open(name);
-  const hit = await cache.match(req);
-  const fresh = fetch(req)
-    .then((res) => {
-      if (res.ok) cache.put(req, res.clone());
-      return res;
-    })
-    .catch(() => null);
-  return hit || (await fresh) || Response.error();
-}
+const SLOW_MS = 5000;
 
-async function networkFirstPage(req) {
+/** Network first (always revalidated); the cached copy answers offline or when the network is very slow. */
+async function networkFirst(req, key) {
   const cache = await caches.open(SHELL);
-  try {
-    const res = await fetch(req);
-    if (res.ok) cache.put("index.html", res.clone());
+  const hit = await cache.match(key, { ignoreSearch: true });
+  const fresh = fetch(req.url, { cache: "no-cache" }).then((res) => {
+    if (res.ok) cache.put(key, res.clone());
     return res;
-  } catch {
-    return (await cache.match("index.html")) || (await cache.match("./")) || Response.error();
-  }
+  });
+  if (!hit) return fresh.catch(() => Response.error());
+  const slow = new Promise((resolve) => setTimeout(() => resolve(hit), SLOW_MS));
+  return Promise.race([fresh, slow]).catch(() => hit);
 }
